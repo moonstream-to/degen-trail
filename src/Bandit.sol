@@ -121,6 +121,7 @@ contract Bandit {
         _waitForTickForPlayer(player);
         uint256 entropy = uint256(blockhash(LastRollForPlayer[player]));
         emit PlayerEntropyUsed(player, entropy);
+        delete LastRollForPlayer[player];
         return entropy;
     }
 
@@ -129,6 +130,7 @@ contract Bandit {
         _waitForTickForNFT(tokenAddress, tokenID);
         uint256 entropy = uint256(blockhash(LastRollForNFT[tokenAddress][tokenID]));
         emit NFTEntropyUsed(tokenAddress, tokenID, entropy);
+        delete LastRollForNFT[tokenAddress][tokenID];
         return entropy;
     }
 
