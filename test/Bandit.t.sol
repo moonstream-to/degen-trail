@@ -34,11 +34,11 @@ contract MockERC721 is ERC721 {
 contract MockBandit is Bandit {
     constructor(uint256 blocksToAct, address feeTokenAddress, uint256 rollFee, uint256 rerollFee) Bandit(blocksToAct, feeTokenAddress, rollFee, rerollFee) {}
 
-    function resolveForPlayer() public view returns (uint256) {
+    function resolveForPlayer() public returns (uint256) {
         return _entropyForPlayer(msg.sender);
     }
 
-    function resolveForNFT(address tokenAddress, uint256 tokenID) public view returns (uint256) {
+    function resolveForNFT(address tokenAddress, uint256 tokenID) public returns (uint256) {
         return _entropyForNFT(tokenAddress, tokenID);
     }
 }
@@ -55,6 +55,12 @@ contract BanditTest is Test {
     uint256 rollFee = 10;
     uint256 rerollFee = 3;
 
+    // Bandit events
+    event PlayerRoll(address indexed player);
+    event NFTRoll(address indexed tokenAddress, uint256 indexed tokenID);
+    event PlayerEntropyUsed(address indexed player, uint256 entropy);
+    event NFTEntropyUsed(address indexed tokenAddress, uint256 indexed tokenID, uint256 entropy);
+
     function setUp() public {
         feeToken = new MockERC20();
         bandit = new MockBandit(blockDeadline, address(feeToken), rollFee, rerollFee);
@@ -65,6 +71,8 @@ contract BanditTest is Test {
         vm.startPrank(player1);
         feeToken.mint(player1, 10);
         feeToken.approve(address(bandit), 10);
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerRoll(player1);
         bandit.rollForPlayer();
         vm.expectRevert(abi.encodeWithSelector(Bandit.WaitForPlayerTick.selector, player1));
         bandit.resolveForPlayer();
@@ -75,10 +83,14 @@ contract BanditTest is Test {
         vm.startPrank(player1);
         feeToken.mint(player1, 10);
         feeToken.approve(address(bandit), 10);
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerRoll(player1);
         bandit.rollForPlayer();
         vm.roll(block.number + 1);
-        uint256 entropy = bandit.resolveForPlayer();
         uint256 expectedEntropy = uint256(blockhash(block.number - 1));
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerEntropyUsed(player1, expectedEntropy);
+        uint256 entropy = bandit.resolveForPlayer();
         assertEq(entropy, expectedEntropy);
         vm.stopPrank();
     }
@@ -87,6 +99,8 @@ contract BanditTest is Test {
         vm.startPrank(player1);
         feeToken.mint(player1, 10);
         feeToken.approve(address(bandit), 10);
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerRoll(player1);
         bandit.rollForPlayer();
         vm.roll(block.number + blockDeadline + 1);
         vm.expectRevert(abi.encodeWithSelector(Bandit.PlayerDeadlineExceeded.selector, player1));
@@ -100,6 +114,8 @@ contract BanditTest is Test {
         nfts.mint(player1, tokenID);
         feeToken.mint(player1, 10);
         feeToken.approve(address(bandit), 10);
+        vm.expectEmit(true, true, true, false, address(bandit));
+        emit NFTRoll(address(nfts), tokenID);
         bandit.rollForNFT(address(nfts), tokenID);
         vm.expectRevert(abi.encodeWithSelector(Bandit.WaitForNFTTick.selector, address(nfts), tokenID));
         bandit.resolveForNFT(address(nfts), tokenID);
@@ -107,14 +123,19 @@ contract BanditTest is Test {
     }
 
     function testResolveForNFT() public {
-        nfts.mint(player1, 2);
         vm.startPrank(player1);
+        uint256 tokenID = 2;
+        nfts.mint(player1, tokenID);
         feeToken.mint(player1, 10);
         feeToken.approve(address(bandit), 10);
+        vm.expectEmit(true, true, true, false, address(bandit));
+        emit NFTRoll(address(nfts), tokenID);
         bandit.rollForNFT(address(nfts), 2);
         vm.roll(block.number + 1);
-        uint256 entropy = bandit.resolveForNFT(address(nfts), 2);
         uint256 expectedEntropy = uint256(blockhash(block.number - 1));
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit NFTEntropyUsed(address(nfts), tokenID, expectedEntropy);
+        uint256 entropy = bandit.resolveForNFT(address(nfts), 2);
         assertEq(entropy, expectedEntropy);
         vm.stopPrank();
     }
@@ -125,6 +146,8 @@ contract BanditTest is Test {
         nfts.mint(player1, tokenID);
         feeToken.mint(player1, 10);
         feeToken.approve(address(bandit), 10);
+        vm.expectEmit(true, true, true, false, address(bandit));
+        emit NFTRoll(address(nfts), tokenID);
         bandit.rollForNFT(address(nfts), tokenID);
         vm.roll(block.number + blockDeadline + 1);
         vm.expectRevert(abi.encodeWithSelector(Bandit.NFTDeadlineExceeded.selector, address(nfts), tokenID));

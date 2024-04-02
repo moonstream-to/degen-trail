@@ -25,6 +25,11 @@ import {SafeERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/uti
 contract Bandit {
     using SafeERC20 for IERC20;
 
+    event PlayerRoll(address indexed player);
+    event NFTRoll(address indexed tokenAddress, uint256 indexed tokenID);
+    event PlayerEntropyUsed(address indexed player, uint256 entropy);
+    event NFTEntropyUsed(address indexed tokenAddress, uint256 indexed tokenID, uint256 entropy);
+
     // Number of blocks that players have to act once. Exceeding this deadline after their roll action
     // will result in the roll being wasted.
     uint256 public BlocksToAct;
@@ -70,6 +75,7 @@ contract Bandit {
     function rollForPlayer() public returns (uint256) {
         FeeToken.safeTransferFrom(msg.sender, address(this), RollFee);
         LastRollForPlayer[msg.sender] = block.number;
+        emit PlayerRoll(msg.sender);
         _postRoll();
         return block.number;
     }
@@ -79,6 +85,7 @@ contract Bandit {
         _preRollForNFT(tokenAddress, tokenID);
         FeeToken.safeTransferFrom(msg.sender, address(this), RollFee);
         LastRollForNFT[tokenAddress][tokenID] = block.number;
+        emit NFTRoll(tokenAddress, tokenID);
         _postRoll();
         return block.number;
     }
@@ -109,22 +116,27 @@ contract Bandit {
         }
     }
 
-    function _entropyForPlayer(address player) internal view returns (uint256) {
+    function _entropyForPlayer(address player) internal returns (uint256) {
         _checkPlayerDeadline(player);
         _waitForTickForPlayer(player);
-        return uint256(blockhash(LastRollForPlayer[player]));
+        uint256 entropy = uint256(blockhash(LastRollForPlayer[player]));
+        emit PlayerEntropyUsed(player, entropy);
+        return entropy;
     }
 
-    function _entropyForNFT(address tokenAddress, uint256 tokenID) internal view returns (uint256) {
+    function _entropyForNFT(address tokenAddress, uint256 tokenID) internal returns (uint256) {
         _checkNFTDeadline(tokenAddress, tokenID);
         _waitForTickForNFT(tokenAddress, tokenID);
-        return uint256(blockhash(LastRollForNFT[tokenAddress][tokenID]));
+        uint256 entropy = uint256(blockhash(LastRollForNFT[tokenAddress][tokenID]));
+        emit NFTEntropyUsed(tokenAddress, tokenID, entropy);
+        return entropy;
     }
 
     function rerollForPlayer() public returns (uint256) {
         _checkPlayerDeadline(msg.sender);
         FeeToken.safeTransferFrom(msg.sender, address(this), RerollFee);
         LastRollForPlayer[msg.sender] = block.number;
+        emit PlayerRoll(msg.sender);
         _postRoll();
         return block.number;
     }
@@ -134,6 +146,7 @@ contract Bandit {
         _checkNFTDeadline(tokenAddress, tokenID);
         FeeToken.safeTransferFrom(msg.sender, address(this), RerollFee);
         LastRollForNFT[tokenAddress][tokenID] = block.number;
+        emit NFTRoll(tokenAddress, tokenID);
         _postRoll();
         return block.number;
     }
