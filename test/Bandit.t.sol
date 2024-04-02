@@ -135,7 +135,7 @@ contract BanditTest is Test {
         uint256 expectedEntropy = uint256(blockhash(block.number - 1));
         vm.expectEmit(true, true, false, false, address(bandit));
         emit NFTEntropyUsed(address(nfts), tokenID, expectedEntropy);
-        uint256 entropy = bandit.resolveForNFT(address(nfts), 2);
+        uint256 entropy = bandit.resolveForNFT(address(nfts), tokenID);
         assertEq(entropy, expectedEntropy);
         vm.stopPrank();
     }
@@ -178,6 +178,36 @@ contract BanditTest is Test {
         vm.roll(block.number + blockDeadline + 1);
         vm.expectRevert(abi.encodeWithSelector(Bandit.PlayerDeadlineExceeded.selector, player1));
         bandit.rerollForPlayer();
+        vm.stopPrank();
+    }
+
+    function testRerollForNFT() public {
+        vm.startPrank(player1);
+        uint256 tokenID = 4;
+        nfts.mint(player1, tokenID);
+        feeToken.mint(player1, rollFee + rerollFee);
+        feeToken.approve(address(bandit), rollFee + rerollFee);
+        vm.expectEmit(true, true, true, false, address(bandit));
+        emit NFTRoll(address(nfts), tokenID);
+        bandit.rollForNFT(address(nfts), tokenID);
+        vm.expectEmit(true, true, true, false, address(bandit));
+        emit NFTRoll(address(nfts), tokenID);
+        bandit.rerollForNFT(address(nfts), tokenID);
+        vm.stopPrank();
+    }
+
+    function testRerollForNFTFailsAfterBlockDeadline() public {
+        vm.startPrank(player1);
+        uint256 tokenID = 5;
+        nfts.mint(player1, tokenID);
+        feeToken.mint(player1, rollFee + rerollFee);
+        feeToken.approve(address(bandit), rollFee + rerollFee);
+        vm.expectEmit(true, true, true, false, address(bandit));
+        emit NFTRoll(address(nfts), tokenID);
+        bandit.rollForNFT(address(nfts), tokenID);
+        vm.roll(block.number + blockDeadline + 1);
+        vm.expectRevert(abi.encodeWithSelector(Bandit.NFTDeadlineExceeded.selector, address(nfts), tokenID));
+        bandit.resolveForNFT(address(nfts), tokenID);
         vm.stopPrank();
     }
 }
