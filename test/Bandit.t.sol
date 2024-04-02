@@ -154,4 +154,30 @@ contract BanditTest is Test {
         bandit.resolveForNFT(address(nfts), tokenID);
         vm.stopPrank();
     }
+
+    function testRerollForPlayer() public {
+        vm.startPrank(player1);
+        feeToken.mint(player1, rollFee + rerollFee);
+        feeToken.approve(address(bandit), rollFee + rerollFee);
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerRoll(player1);
+        bandit.rollForPlayer();
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerRoll(player1);
+        bandit.rerollForPlayer();
+        vm.stopPrank();
+    }
+
+    function testRerollForPlayerFailsAfterBlockDeadline() public {
+        vm.startPrank(player1);
+        feeToken.mint(player1, rollFee + rerollFee);
+        feeToken.approve(address(bandit), rollFee + rerollFee);
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerRoll(player1);
+        bandit.rollForPlayer();
+        vm.roll(block.number + blockDeadline + 1);
+        vm.expectRevert(abi.encodeWithSelector(Bandit.PlayerDeadlineExceeded.selector, player1));
+        bandit.rerollForPlayer();
+        vm.stopPrank();
+    }
 }
