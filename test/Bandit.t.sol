@@ -67,6 +67,11 @@ contract BanditTest is Test {
         nfts = new MockERC721();
     }
 
+    /**
+     * Tests:
+     * - rollForPlayer
+     * - _entropyForPlayer
+     */
     function testResolveForPlayerFailsOnSameBlockAsRoll() public {
         vm.startPrank(player1);
         feeToken.mint(player1, 10);
@@ -79,6 +84,11 @@ contract BanditTest is Test {
         vm.stopPrank();
     }
 
+    /**
+     * Tests:
+     * - rollForPlayer
+     * - _entropyForPlayer
+     */
     function testResolveForPlayer() public {
         vm.startPrank(player1);
         feeToken.mint(player1, 10);
@@ -95,6 +105,11 @@ contract BanditTest is Test {
         vm.stopPrank();
     }
 
+    /**
+     * Tests:
+     * - rollForPlayer
+     * - _entropyForPlayer
+     */
     function testResolveForPlayerFailsAfterBlockDeadline() public {
         vm.startPrank(player1);
         feeToken.mint(player1, 10);
@@ -108,6 +123,11 @@ contract BanditTest is Test {
         vm.stopPrank();
     }
 
+    /**
+     * Tests:
+     * - rollForNFT
+     * - _entropyForNFT
+     */
     function testResolveForNFTFailsOnSameBlockAsRoll() public {
         vm.startPrank(player1);
         uint256 tokenID = 1;
@@ -122,6 +142,11 @@ contract BanditTest is Test {
         vm.stopPrank();
     }
 
+    /**
+     * Tests:
+     * - rollForNFT
+     * - _entropyForNFT
+     */
     function testResolveForNFT() public {
         vm.startPrank(player1);
         uint256 tokenID = 2;
@@ -140,6 +165,11 @@ contract BanditTest is Test {
         vm.stopPrank();
     }
 
+    /**
+     * Tests:
+     * - rollForNFT
+     * - _entropyForNFT
+     */
     function testResolveForNFTFailsAfterBlockDeadline() public {
         vm.startPrank(player1);
         uint256 tokenID = 3;
@@ -155,6 +185,11 @@ contract BanditTest is Test {
         vm.stopPrank();
     }
 
+    /**
+     * Tests:
+     * - rollForPlayer
+     * - rerollForPlayer
+     */
     function testRerollForPlayer() public {
         vm.startPrank(player1);
         feeToken.mint(player1, rollFee + rerollFee);
@@ -168,6 +203,11 @@ contract BanditTest is Test {
         vm.stopPrank();
     }
 
+    /**
+     * Tests:
+     * - rollForPlayer
+     * - rerollForPlayer
+     */
     function testRerollForPlayerFailsAfterBlockDeadline() public {
         vm.startPrank(player1);
         feeToken.mint(player1, rollFee + rerollFee);
@@ -181,6 +221,11 @@ contract BanditTest is Test {
         vm.stopPrank();
     }
 
+    /**
+     * Tests:
+     * - rollForNFT
+     * - rerollForNFT
+     */
     function testRerollForNFT() public {
         vm.startPrank(player1);
         uint256 tokenID = 4;
@@ -196,6 +241,11 @@ contract BanditTest is Test {
         vm.stopPrank();
     }
 
+    /**
+     * Tests:
+     * - rollForNFT
+     * - rerollForNFT
+     */
     function testRerollForNFTFailsAfterBlockDeadline() public {
         vm.startPrank(player1);
         uint256 tokenID = 5;
