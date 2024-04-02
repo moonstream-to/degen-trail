@@ -1,0 +1,43 @@
+{
+    "hardhat": {
+        "NFT": {
+            "name": "yourNFT",
+            "symbol": "YNFT",
+            "owner": "0x0BC7220BbB82C10d88fb3469d5330B6522d7645D",
+            "base_uri": "https://uri.npc.institute/"
+        },
+        "FeeToken": {
+              "initialSupply": "10000",
+              "owner": "0x0BC7220BbB82C10d88fb3469d5330B6522d7645D",
+              "name": "Fee Token",
+              "symbol": "FEE"
+        },
+        "Bandit": {
+            "blocksToAct": "1",
+            "rollFee": "1",
+            "rerollFee": "1"
+        }
+    },
+    "opsepolia": {
+        "NFT": {
+            "name": "yourNFT",
+            "symbol": "YNFT",
+            "owner": "0x0BC7220BbB82C10d88fb3469d5330B6522d7645D",
+            "base_uri": "https://uri.npc.institute/"            
+        },
+        "FeeToken": {
+            "initialSupply": "10000",
+            "owner": "0x0BC7220BbB82C10d88fb3469d5330B6522d7645D",
+            "name": "Fee Token",
+            "symbol": "FEE"
+      },
+      "Bandit": {
+        "blocksToAct": "1",
+        "rollFee": "1",
+        "rerollFee": "1"
+      }
+
+
+    }
+
+}
