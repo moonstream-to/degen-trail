@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/moonstream-to/degen-trail/trailmix/game"
 	"github.com/moonstream-to/degen-trail/trailmix/version"
 )
 
@@ -20,7 +21,8 @@ func CreateRootCommand() *cobra.Command {
 
 	completionCmd := CreateCompletionCommand(rootCmd)
 	versionCmd := CreateVersionCommand()
-	rootCmd.AddCommand(completionCmd, versionCmd)
+	boardCmd := CreateBoardCommand()
+	rootCmd.AddCommand(completionCmd, versionCmd, boardCmd)
 
 	// By default, cobra Command objects write to stderr. We have to forcibly set them to output to
 	// stdout.
@@ -93,4 +95,56 @@ func CreateVersionCommand() *cobra.Command {
 	}
 
 	return versionCmd
+}
+
+func CreateBoardCommand() *cobra.Command {
+	var outfile string
+	var strips, hexesPerStrip, red, green, blue, strokeRed, strokeGreen, strokeBlue uint
+	var alpha, strokeWidth float32
+	boardCmd := &cobra.Command{
+		Use:   "board",
+		Short: "View a portion of the game board for The Degen Trail",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			yMultiplier := int(strips/2) + 1
+			if strips%2 == 0 {
+				yMultiplier = int(strips) / 2
+			}
+			preamble, err := game.Preamble((3*float32(hexesPerStrip)*game.Boundary.X+1)/2, float32(yMultiplier)*game.Boundary.Y)
+			if err != nil {
+				return err
+			}
+
+			hex, err := game.HexagonalGrid(strips, hexesPerStrip, red, green, blue, alpha, strokeRed, strokeGreen, strokeBlue, strokeWidth)
+			if err != nil {
+				return err
+			}
+
+			result := preamble + hex + game.SVGEnd
+
+			if outfile != "" {
+				writeErr := os.WriteFile(outfile, []byte(result), 0644)
+				if writeErr != nil {
+					return writeErr
+				}
+			} else {
+				cmd.Println(result)
+			}
+
+			return nil
+		},
+	}
+
+	boardCmd.Flags().StringVarP(&outfile, "outfile", "o", "", "The file to write the SVG output to")
+	boardCmd.Flags().UintVarP(&strips, "strips", "s", 1, "The number of horizontal strips to display")
+	boardCmd.Flags().UintVarP(&hexesPerStrip, "hexes-per-strip", "p", 1, "The number of hexes to display per strip")
+	boardCmd.Flags().UintVarP(&red, "red", "r", 0, "The red component of the fill color")
+	boardCmd.Flags().UintVarP(&green, "green", "g", 0, "The green component of the fill color")
+	boardCmd.Flags().UintVarP(&blue, "blue", "b", 0, "The blue component of the fill color")
+	boardCmd.Flags().Float32VarP(&alpha, "alpha", "a", 1.0, "The opacity of the fill color")
+	boardCmd.Flags().UintVarP(&strokeRed, "stroke-red", "R", 0, "The red component of the stroke color")
+	boardCmd.Flags().UintVarP(&strokeGreen, "stroke-green", "G", 0, "The green component of the stroke color")
+	boardCmd.Flags().UintVarP(&strokeBlue, "stroke-blue", "B", 0, "The blue component of the stroke color")
+	boardCmd.Flags().Float32VarP(&strokeWidth, "stroke-width", "w", 0.1, "The width of the stroke")
+
+	return boardCmd
 }
