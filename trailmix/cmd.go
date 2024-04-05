@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -22,7 +24,8 @@ func CreateRootCommand() *cobra.Command {
 	completionCmd := CreateCompletionCommand(rootCmd)
 	versionCmd := CreateVersionCommand()
 	boardCmd := CreateBoardCommand()
-	rootCmd.AddCommand(completionCmd, versionCmd, boardCmd)
+	hexCmd := CreateHexCommand()
+	rootCmd.AddCommand(completionCmd, versionCmd, boardCmd, hexCmd)
 
 	// By default, cobra Command objects write to stderr. We have to forcibly set them to output to
 	// stdout.
@@ -97,14 +100,84 @@ func CreateVersionCommand() *cobra.Command {
 	return versionCmd
 }
 
+func CreateHexCommand() *cobra.Command {
+	var outfile, text string
+	var red, green, blue, strokeRed, strokeGreen, strokeBlue, textRed, textGreen, textBlue uint
+	var alpha, strokeWidth, textSize float32
+	hexCmd := &cobra.Command{
+		Use:   "hex",
+		Short: "SVG rendering of a single hexagon",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			preamble, err := game.Preamble(game.Boundary.X, game.Boundary.Y)
+			if err != nil {
+				return err
+			}
+
+			hex, err := game.SingleHex(text, 0, 0, red, green, blue, alpha, strokeRed, strokeGreen, strokeBlue, strokeWidth, textRed, textGreen, textBlue, textSize)
+			if err != nil {
+				return err
+			}
+
+			result := preamble + hex + game.SVGEnd
+
+			if outfile != "" {
+				writeErr := os.WriteFile(outfile, []byte(result), 0644)
+				if writeErr != nil {
+					return writeErr
+				}
+			} else {
+				cmd.Println(result)
+			}
+
+			return nil
+		},
+	}
+
+	hexCmd.Flags().StringVarP(&outfile, "outfile", "o", "", "The file to write the SVG output to")
+	hexCmd.Flags().UintVarP(&red, "red", "r", 0, "The red component of the fill color")
+	hexCmd.Flags().UintVarP(&green, "green", "g", 0, "The green component of the fill color")
+	hexCmd.Flags().UintVarP(&blue, "blue", "b", 0, "The blue component of the fill color")
+	hexCmd.Flags().Float32VarP(&alpha, "alpha", "a", 1.0, "The opacity of the fill color")
+	hexCmd.Flags().UintVar(&strokeRed, "stroke-red", 0, "The red component of the stroke color")
+	hexCmd.Flags().UintVar(&strokeGreen, "stroke-green", 0, "The green component of the stroke color")
+	hexCmd.Flags().UintVar(&strokeBlue, "stroke-blue", 0, "The blue component of the stroke color")
+	hexCmd.Flags().Float32VarP(&strokeWidth, "stroke-width", "w", 0.1, "The width of the stroke")
+	hexCmd.Flags().StringVarP(&text, "text", "t", "", "The text to display on the hexagon")
+	hexCmd.Flags().UintVarP(&textRed, "text-red", "R", 0, "The red component of the text color")
+	hexCmd.Flags().UintVarP(&textGreen, "text-green", "G", 0, "The green component of the text color")
+	hexCmd.Flags().UintVarP(&textBlue, "text-blue", "B", 0, "The blue component of the text color")
+	hexCmd.Flags().Float32VarP(&textSize, "text-size", "T", 0.5, "The size of the text")
+
+	return hexCmd
+}
+
 func CreateBoardCommand() *cobra.Command {
-	var outfile string
-	var strips, hexesPerStrip, red, green, blue, strokeRed, strokeGreen, strokeBlue uint
-	var alpha, strokeWidth float32
+	var outfile, startingTerrainFile, endingTerrainFile string
+	var strips, hexesPerStrip, strokeRed, strokeGreen, strokeBlue uint
+	var strokeWidth float32
+	var seed int64
 	boardCmd := &cobra.Command{
 		Use:   "board",
 		Short: "View a portion of the game board for The Degen Trail",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if startingTerrainFile == "" {
+				return errors.New("file defining starting terrain is not specified")
+			}
+
+			if endingTerrainFile == "" {
+				return errors.New("file to which ending terrain should be written is not specified")
+			}
+
+			var startingTerrain []uint
+			startingTerrainBytes, startingTerrainFileErr := os.ReadFile(startingTerrainFile)
+			if startingTerrainFileErr != nil {
+				return startingTerrainFileErr
+			}
+			startingTerrainUnmarshalErr := json.Unmarshal(startingTerrainBytes, &startingTerrain)
+			if startingTerrainUnmarshalErr != nil {
+				return startingTerrainUnmarshalErr
+			}
+
 			yMultiplier := int(strips/2) + 1
 			if strips%2 == 0 {
 				yMultiplier = int(strips) / 2
@@ -114,7 +187,7 @@ func CreateBoardCommand() *cobra.Command {
 				return err
 			}
 
-			hex, err := game.HexagonalGrid(strips, hexesPerStrip, red, green, blue, alpha, strokeRed, strokeGreen, strokeBlue, strokeWidth)
+			hex, err := game.HexagonalGrid(seed, strips, hexesPerStrip, strokeRed, strokeGreen, strokeBlue, strokeWidth)
 			if err != nil {
 				return err
 			}
@@ -135,12 +208,9 @@ func CreateBoardCommand() *cobra.Command {
 	}
 
 	boardCmd.Flags().StringVarP(&outfile, "outfile", "o", "", "The file to write the SVG output to")
+	boardCmd.Flags().Int64Var(&seed, "seed", 0, "The seed for procedural generation of the grid")
 	boardCmd.Flags().UintVarP(&strips, "strips", "s", 1, "The number of horizontal strips to display")
 	boardCmd.Flags().UintVarP(&hexesPerStrip, "hexes-per-strip", "p", 1, "The number of hexes to display per strip")
-	boardCmd.Flags().UintVarP(&red, "red", "r", 0, "The red component of the fill color")
-	boardCmd.Flags().UintVarP(&green, "green", "g", 0, "The green component of the fill color")
-	boardCmd.Flags().UintVarP(&blue, "blue", "b", 0, "The blue component of the fill color")
-	boardCmd.Flags().Float32VarP(&alpha, "alpha", "a", 1.0, "The opacity of the fill color")
 	boardCmd.Flags().UintVarP(&strokeRed, "stroke-red", "R", 0, "The red component of the stroke color")
 	boardCmd.Flags().UintVarP(&strokeGreen, "stroke-green", "G", 0, "The green component of the stroke color")
 	boardCmd.Flags().UintVarP(&strokeBlue, "stroke-blue", "B", 0, "The blue component of the stroke color")

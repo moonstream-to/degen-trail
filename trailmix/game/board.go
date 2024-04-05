@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strings"
 	"text/template"
+	"time"
 )
 
 var ErrInvalidColor error = errors.New("invalid color")
@@ -23,6 +25,12 @@ type HexagonParameters struct {
 	Stroke      string
 	StrokeWidth string
 	Vertices    string
+	TextX       string
+	TextY       string
+	Text        string
+	TextColor   string
+	TextSize    string
+	TextDY      string
 }
 
 type SVGParameters struct {
@@ -33,6 +41,54 @@ type SVGParameters struct {
 type HexagonalStripParameters struct {
 	Horizontal float32
 	Vertical   float32
+}
+
+type HexColor struct {
+	Red   uint    `json:"red"`
+	Green uint    `json:"green"`
+	Blue  uint    `json:"blue"`
+	Alpha float32 `json:"alpha"`
+}
+
+// Default color palette for the game board
+// Colors and opacities for the following terrain types:
+// 1. Plain
+// 2. Forest
+// 3. Swamp
+// 4. River
+// 5. Mountain
+// 6. Desert
+var DefaultColors []HexColor = []HexColor{
+	HexColor{Red: 166,
+		Green: 237,
+		Blue:  185,
+		Alpha: 0.8,
+	},
+	HexColor{Red: 42,
+		Green: 130,
+		Blue:  22,
+		Alpha: 0.8,
+	},
+	HexColor{Red: 81,
+		Green: 89,
+		Blue:  8,
+		Alpha: 0.8,
+	},
+	HexColor{Red: 69,
+		Green: 215,
+		Blue:  245,
+		Alpha: 0.8,
+	},
+	HexColor{Red: 83,
+		Green: 92,
+		Blue:  84,
+		Alpha: 0.8,
+	},
+	HexColor{Red: 176,
+		Green: 164,
+		Blue:  111,
+		Alpha: 0.8,
+	},
 }
 
 var point1 Coordinates = Coordinates{2, 0.86602540378}
@@ -57,9 +113,7 @@ func Preamble(width, height float32) (string, error) {
 	return b.String(), err
 }
 
-var SVGEnd string = "</svg>"
-
-func SingleHex(x, y float32, red, green, blue uint, alpha float32, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) (string, error) {
+func SingleHex(text string, x, y float32, red, green, blue uint, alpha float32, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32, textRed, textGreen, textBlue uint, textSize float32) (string, error) {
 	if red > 255 || green > 255 || blue > 255 {
 		return "", ErrInvalidColor
 	}
@@ -76,11 +130,21 @@ func SingleHex(x, y float32, red, green, blue uint, alpha float32, strokeRed, st
 		return "", ErrInvalidParameter
 	}
 
+	if textRed > 255 || textGreen > 255 || textBlue > 255 {
+		return "", ErrInvalidColor
+	}
+
 	params := HexagonParameters{}
 	params.Fill = fmt.Sprintf("#%02x%02x%02x", red, green, blue)
 	params.Opacity = fmt.Sprintf("%f", alpha)
 	params.Stroke = fmt.Sprintf("#%02x%02x%02x", strokeRed, strokeGreen, strokeBlue)
 	params.StrokeWidth = fmt.Sprintf("%f", strokeWidth)
+	params.Text = text
+	params.TextX = fmt.Sprintf("%f", x+1.0)
+	params.TextY = fmt.Sprintf("%f", y+point1.Y)
+	params.TextColor = fmt.Sprintf("#%02x%02x%02x", textRed, textGreen, textBlue)
+	params.TextSize = fmt.Sprintf("%f", textSize)
+	params.TextDY = fmt.Sprintf("%f", textSize/3)
 
 	pointsStr := make([]string, 6)
 	for i, point := range points {
@@ -94,31 +158,59 @@ func SingleHex(x, y float32, red, green, blue uint, alpha float32, strokeRed, st
 	return b.String(), err
 }
 
-func HexagonalGrid(horizontalStrips uint, hexesPerStrip uint, red, green, blue uint, alpha float32, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) (string, error) {
-	hexagonParameters := make([]HexagonParameters, hexesPerStrip)
-	for i := 0; i < int(hexesPerStrip); i++ {
-		hexagonParameters[i] = HexagonParameters{
-			Fill:        fmt.Sprintf("#%02x%02x%02x", red, green, blue),
-			Opacity:     fmt.Sprintf("%f", alpha),
-			Stroke:      fmt.Sprintf("#%02x%02x%02x", strokeRed, strokeGreen, strokeBlue),
-			StrokeWidth: fmt.Sprintf("%f", strokeWidth),
-		}
-
-		pointsStr := make([]string, 6)
-		for j, point := range points {
-			pointsStr[j] = fmt.Sprintf("%f,%f", point.X+float32(i)*3, point.Y)
-		}
-		hexagonParameters[i].Vertices = strings.Join(pointsStr, " ")
+func hexes(rng *rand.Rand, horizontalStrips uint, hexesPerStrip uint, palette []HexColor, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) ([][]HexagonParameters, error) {
+	if strokeRed > 255 || strokeGreen > 255 || strokeBlue > 255 {
+		return [][]HexagonParameters{}, ErrInvalidColor
 	}
 
-	var b bytes.Buffer
-	stripErr := HexagonTemplate.Execute(&b, hexagonParameters)
-	if stripErr != nil {
-		return "", stripErr
+	if strokeWidth < 0 {
+		return [][]HexagonParameters{}, ErrInvalidParameter
 	}
-	stripDefinition := b.String()
+
+	strips := make([][]HexagonParameters, horizontalStrips)
+	for i := 0; i < int(horizontalStrips); i++ {
+		strips[i] = make([]HexagonParameters, hexesPerStrip)
+		for j := int(hexesPerStrip) - 1; j >= 0; j-- {
+			terrainType := rng.Intn(6)
+			colors := palette[terrainType]
+			strips[i][j] = HexagonParameters{
+				Fill:        fmt.Sprintf("#%02x%02x%02x", colors.Red, colors.Green, colors.Blue),
+				Opacity:     fmt.Sprintf("%f", colors.Alpha),
+				Stroke:      fmt.Sprintf("#%02x%02x%02x", strokeRed, strokeGreen, strokeBlue),
+				StrokeWidth: fmt.Sprintf("%f", strokeWidth),
+			}
+
+			pointsStr := make([]string, 6)
+			for k, point := range points {
+				pointsStr[k] = fmt.Sprintf("%f,%f", point.X+float32(j)*3, point.Y)
+			}
+			strips[i][j].Vertices = strings.Join(pointsStr, " ")
+		}
+	}
+
+	return strips, nil
+}
+
+func HexagonalGrid(seed int64, horizontalStrips uint, hexesPerStrip uint, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) (string, error) {
+	if strokeRed > 255 || strokeGreen > 255 || strokeBlue > 255 {
+		return "", ErrInvalidColor
+	}
+
+	if strokeWidth < 0 {
+		return "", ErrInvalidParameter
+	}
+
+	if seed == 0 {
+		seed = time.Now().UnixNano()
+	}
+	rng := rand.New(rand.NewSource(seed))
 
 	result := ""
+
+	strips, stripsErr := hexes(rng, horizontalStrips, hexesPerStrip, DefaultColors, strokeRed, strokeGreen, strokeBlue, strokeWidth)
+	if stripsErr != nil {
+		return result, stripsErr
+	}
 
 	for i := 0; i < int(horizontalStrips); i++ {
 		horizontalOffset := 0.0
@@ -136,7 +228,13 @@ func HexagonalGrid(horizontalStrips uint, hexesPerStrip uint, red, green, blue u
 			return "", gErr
 		}
 
-		result += gb.String() + stripDefinition + GEnd
+		var sb bytes.Buffer
+		stripErr := HexagonTemplate.Execute(&sb, strips[i])
+		if stripErr != nil {
+			return result, stripErr
+		}
+
+		result += gb.String() + sb.String() + GEnd
 	}
 
 	return result, nil
@@ -146,6 +244,8 @@ var SVGStartTemplateDefinition string = `<svg viewBox="0 0 {{.ViewBoxWidth}} {{.
 `
 
 var SVGStartTemplate *template.Template = template.Must(template.New("svg").Parse(SVGStartTemplateDefinition))
+
+var SVGEnd string = "</svg>"
 
 var GHexagonHorizontalStripTemplateDefinition string = `<g class="hexagonalstrip" transform="translate({{.Horizontal}}, {{.Vertical}})">
 `
@@ -157,6 +257,7 @@ var GEnd string = `</g>
 
 var HexagonTemplateDefinition string = `{{range .}}
 <polygon class="hexagon" fill="{{.Fill}}" opacity="{{.Opacity}}" stroke="{{.Stroke}}" stroke-width="{{.StrokeWidth}}" points="{{.Vertices}}"></polygon>
+{{if .Text}}<text x="{{.TextX}}" y="{{.TextY}}" text-anchor="middle" fill="{{.TextColor}}" font-size="{{.TextSize}}" dy="{{.TextDY}}">{{.Text}}</text>{{end}}
 {{end}}
 `
 
