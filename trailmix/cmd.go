@@ -187,7 +187,7 @@ func CreateBoardCommand() *cobra.Command {
 				return err
 			}
 
-			hex, err := game.HexagonalGrid(seed, strips, hexesPerStrip, strokeRed, strokeGreen, strokeBlue, strokeWidth)
+			hex, err := game.HexagonalGrid(seed, strips, hexesPerStrip, startingTerrain, strokeRed, strokeGreen, strokeBlue, strokeWidth)
 			if err != nil {
 				return err
 			}
