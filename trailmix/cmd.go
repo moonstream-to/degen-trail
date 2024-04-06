@@ -208,6 +208,8 @@ func CreateBoardCommand() *cobra.Command {
 	}
 
 	boardCmd.Flags().StringVarP(&outfile, "outfile", "o", "", "The file to write the SVG output to")
+	boardCmd.Flags().StringVarP(&startingTerrainFile, "starting-terrain", "t", "", "The file defining the starting terrain")
+	boardCmd.Flags().StringVarP(&endingTerrainFile, "ending-terrain", "T", "", "The file to which ending terrain should be written")
 	boardCmd.Flags().Int64Var(&seed, "seed", 0, "The seed for procedural generation of the grid")
 	boardCmd.Flags().UintVarP(&strips, "strips", "s", 1, "The number of horizontal strips to display")
 	boardCmd.Flags().UintVarP(&hexesPerStrip, "hexes-per-strip", "p", 1, "The number of hexes to display per strip")
