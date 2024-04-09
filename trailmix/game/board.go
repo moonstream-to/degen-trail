@@ -92,22 +92,6 @@ var DefaultColors []HexColor = []HexColor{
 	},
 }
 
-// Transition matrix terrain cumulative weights (for terrain generation), with rows and columns indexed as:
-// 0. Plain
-// 1. Forest
-// 2. Swamp
-// 3. River
-// 4. Mountain
-// 5. Desert
-var TerrainGenerationCumulativeWeights [][]uint = [][]uint{
-	{350, 500, 550, 824, 924, 1024},
-	{100, 550, 600, 900, 1000, 1024},
-	{150, 350, 600, 900, 1000, 1024},
-	{212, 362, 512, 952, 1024, 1024},
-	{50, 200, 250, 600, 975, 1024},
-	{300, 312, 324, 324, 624, 1024},
-}
-
 var point1 Coordinates = Coordinates{2, 0.86602540378}
 var point2 Coordinates = Coordinates{1.5, 0}
 var point3 Coordinates = Coordinates{0.5, 0}
@@ -175,7 +159,7 @@ func SingleHex(text string, x, y float32, red, green, blue uint, alpha float32, 
 	return b.String(), err
 }
 
-func hexes(rng *rand.Rand, horizontalStrips uint, hexesPerStrip uint, startingTerrain []uint, palette []HexColor, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) ([][]HexagonParameters, error) {
+func hexes(rng *rand.Rand, horizontalStrips uint, hexesPerStrip uint, palette []HexColor, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) ([][]HexagonParameters, error) {
 	strips := make([][]HexagonParameters, horizontalStrips)
 	for i := 0; i < int(horizontalStrips); i++ {
 		strips[i] = make([]HexagonParameters, hexesPerStrip)
@@ -183,33 +167,42 @@ func hexes(rng *rand.Rand, horizontalStrips uint, hexesPerStrip uint, startingTe
 
 	for j := int(hexesPerStrip) - 1; j >= 0; j-- {
 		for i := 0; i < int(horizontalStrips); i++ {
-			var sourceTerrain int = -1
+			chaos := rng.Intn(8)
 			var terrainType uint
-			if j == int(hexesPerStrip)-1 {
-				terrainType = startingTerrain[i]
-			} else if i == 0 {
-				sourceTerrain = int(strips[1][j+1].TerrainType)
-			} else if i == int(horizontalStrips)-1 {
-				sourceTerrain = int(strips[horizontalStrips-2][j+1].TerrainType)
-			} else {
-				sourceChoice := rng.Intn(2)
-				sourceJ := j
-				if i%2 == 1 {
-					sourceJ = j + 1
-				}
-				sourceI := i - 1
-				if sourceChoice == 1 {
-					sourceI = i + 1
-				}
-				sourceTerrain = int(strips[sourceI][sourceJ].TerrainType)
-			}
 
-			if sourceTerrain >= 0 {
-				terrainChoice := rng.Intn(1024)
-				for k, weight := range TerrainGenerationCumulativeWeights[sourceTerrain] {
-					if terrainChoice < int(weight) {
-						terrainType = uint(k)
-						break
+			if chaos == 7 {
+				terrainType = uint(rand.Intn(6))
+			} else {
+				chaos = rand.Intn(4)
+				if i < 20 {
+					if chaos == 0 {
+						terrainType = 1
+					} else {
+						terrainType = 4
+					}
+				} else if i < 40 {
+					if chaos == 0 {
+						terrainType = 0
+					} else {
+						terrainType = 1
+					}
+				} else if i < 60 {
+					if chaos == 0 {
+						terrainType = 2
+					} else {
+						terrainType = 3
+					}
+				} else if i < 80 {
+					if chaos == 0 {
+						terrainType = 2
+					} else {
+						terrainType = 0
+					}
+				} else {
+					if chaos == 0 {
+						terrainType = 0
+					} else {
+						terrainType = 5
 					}
 				}
 			}
@@ -234,16 +227,12 @@ func hexes(rng *rand.Rand, horizontalStrips uint, hexesPerStrip uint, startingTe
 	return strips, nil
 }
 
-func HexagonalGrid(seed int64, horizontalStrips uint, hexesPerStrip uint, startingTerrain []uint, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) (string, error) {
+func HexagonalGrid(seed int64, horizontalStrips uint, hexesPerStrip uint, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) (string, error) {
 	if strokeRed > 255 || strokeGreen > 255 || strokeBlue > 255 {
 		return "", ErrInvalidColor
 	}
 
 	if strokeWidth < 0 {
-		return "", ErrInvalidParameter
-	}
-
-	if len(startingTerrain) != int(horizontalStrips) {
 		return "", ErrInvalidParameter
 	}
 
@@ -254,7 +243,7 @@ func HexagonalGrid(seed int64, horizontalStrips uint, hexesPerStrip uint, starti
 
 	result := ""
 
-	strips, stripsErr := hexes(rng, horizontalStrips, hexesPerStrip, startingTerrain, DefaultColors, strokeRed, strokeGreen, strokeBlue, strokeWidth)
+	strips, stripsErr := hexes(rng, horizontalStrips, hexesPerStrip, DefaultColors, strokeRed, strokeGreen, strokeBlue, strokeWidth)
 	if stripsErr != nil {
 		return result, stripsErr
 	}

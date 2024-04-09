@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -152,7 +150,7 @@ func CreateHexCommand() *cobra.Command {
 }
 
 func CreateBoardCommand() *cobra.Command {
-	var outfile, startingTerrainFile, endingTerrainFile string
+	var outfile string
 	var strips, hexesPerStrip, strokeRed, strokeGreen, strokeBlue uint
 	var strokeWidth float32
 	var seed int64
@@ -160,24 +158,6 @@ func CreateBoardCommand() *cobra.Command {
 		Use:   "board",
 		Short: "View a portion of the game board for The Degen Trail",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if startingTerrainFile == "" {
-				return errors.New("file defining starting terrain is not specified")
-			}
-
-			if endingTerrainFile == "" {
-				return errors.New("file to which ending terrain should be written is not specified")
-			}
-
-			var startingTerrain []uint
-			startingTerrainBytes, startingTerrainFileErr := os.ReadFile(startingTerrainFile)
-			if startingTerrainFileErr != nil {
-				return startingTerrainFileErr
-			}
-			startingTerrainUnmarshalErr := json.Unmarshal(startingTerrainBytes, &startingTerrain)
-			if startingTerrainUnmarshalErr != nil {
-				return startingTerrainUnmarshalErr
-			}
-
 			yMultiplier := int(strips/2) + 1
 			if strips%2 == 0 {
 				yMultiplier = int(strips) / 2
@@ -187,7 +167,7 @@ func CreateBoardCommand() *cobra.Command {
 				return err
 			}
 
-			hex, err := game.HexagonalGrid(seed, strips, hexesPerStrip, startingTerrain, strokeRed, strokeGreen, strokeBlue, strokeWidth)
+			hex, err := game.HexagonalGrid(seed, strips, hexesPerStrip, strokeRed, strokeGreen, strokeBlue, strokeWidth)
 			if err != nil {
 				return err
 			}
@@ -208,8 +188,6 @@ func CreateBoardCommand() *cobra.Command {
 	}
 
 	boardCmd.Flags().StringVarP(&outfile, "outfile", "o", "", "The file to write the SVG output to")
-	boardCmd.Flags().StringVarP(&startingTerrainFile, "starting-terrain", "t", "", "The file defining the starting terrain")
-	boardCmd.Flags().StringVarP(&endingTerrainFile, "ending-terrain", "T", "", "The file to which ending terrain should be written")
 	boardCmd.Flags().Int64Var(&seed, "seed", 0, "The seed for procedural generation of the grid")
 	boardCmd.Flags().UintVarP(&strips, "strips", "s", 1, "The number of horizontal strips to display")
 	boardCmd.Flags().UintVarP(&hexesPerStrip, "hexes-per-strip", "p", 1, "The number of hexes to display per strip")
