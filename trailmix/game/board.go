@@ -56,9 +56,10 @@ type HexColor struct {
 // 0. Plain
 // 1. Forest
 // 2. Swamp
-// 3. River
+// 3. Water
 // 4. Mountain
 // 5. Desert
+// 6. Ice
 var DefaultColors []HexColor = []HexColor{
 	HexColor{Red: 166,
 		Green: 237,
@@ -90,6 +91,28 @@ var DefaultColors []HexColor = []HexColor{
 		Blue:  111,
 		Alpha: 0.8,
 	},
+	HexColor{Red: 170,
+		Green: 228,
+		Blue:  250,
+		Alpha: 0.8,
+	},
+}
+
+// 0. Forest
+// 1. Prairie
+// 2. River
+// 3. Arctic
+// 4. Marsh
+// 5. Badlands
+// 6. Hills
+var Environments [7][7]uint = [7][7]uint{
+	{0, 90, 8, 25, 5, 0, 0},
+	{90, 5, 5, 20, 0, 8, 0},
+	{0, 0, 8, 120, 0, 0, 0},
+	{0, 8, 0, 0, 20, 0, 100},
+	{5, 5, 98, 20, 0, 0, 0},
+	{18, 0, 0, 0, 10, 100, 0},
+	{0, 43, 0, 5, 80, 0, 0},
 }
 
 var point1 Coordinates = Coordinates{2, 0.86602540378}
@@ -159,51 +182,44 @@ func SingleHex(text string, x, y float32, red, green, blue uint, alpha float32, 
 	return b.String(), err
 }
 
-func hexes(rng *rand.Rand, horizontalStrips uint, hexesPerStrip uint, palette []HexColor, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) ([][]HexagonParameters, error) {
+func hexes(rng *rand.Rand, horizontalStrips uint, hexesPerStrip uint, start uint, palette []HexColor, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) ([][]HexagonParameters, error) {
 	strips := make([][]HexagonParameters, horizontalStrips)
 	for i := 0; i < int(horizontalStrips); i++ {
 		strips[i] = make([]HexagonParameters, hexesPerStrip)
 	}
 
-	for j := int(hexesPerStrip) - 1; j >= 0; j-- {
+	for j := 0; j < int(hexesPerStrip); j++ {
 		for i := 0; i < int(horizontalStrips); i++ {
-			chaos := rng.Intn(8)
-			var terrainType uint
+			realJ := (int(hexesPerStrip) - 1 - j + int(start))
+			environment := (3 * (realJ >> 5)) % 7
 
-			if chaos == 7 {
-				terrainType = uint(rand.Intn(6))
-			} else {
-				chaos = rand.Intn(4)
-				if i < 20 {
-					if chaos == 0 {
-						terrainType = 1
-					} else {
-						terrainType = 4
-					}
-				} else if i < 40 {
-					if chaos == 0 {
-						terrainType = 0
-					} else {
-						terrainType = 1
-					}
-				} else if i < 60 {
-					if chaos == 0 {
-						terrainType = 2
-					} else {
-						terrainType = 3
-					}
-				} else if i < 80 {
-					if chaos == 0 {
-						terrainType = 2
-					} else {
-						terrainType = 0
-					}
-				} else {
-					if chaos == 0 {
-						terrainType = 0
-					} else {
-						terrainType = 5
-					}
+			if realJ%32 >= 28 {
+				flip := rng.Intn(4)
+				if flip != 0 {
+					environment = (environment + 3) % 7
+				}
+			} else if realJ%32 >= 24 {
+				flip := rng.Intn(2)
+				if flip != 0 {
+					environment = (environment + 3) % 7
+				}
+			} else if realJ%32 >= 16 {
+				flip := rng.Intn(4)
+				if flip == 3 {
+					environment = (environment + 3) % 7
+				}
+			}
+
+			terrainEntropy := rng.Intn(128)
+
+			var terrainType uint = 6
+
+			accumulator := 0
+			for k := 0; k < 7; k++ {
+				accumulator += int(Environments[environment][k])
+				if terrainEntropy < accumulator {
+					terrainType = uint(k)
+					break
 				}
 			}
 
@@ -227,7 +243,7 @@ func hexes(rng *rand.Rand, horizontalStrips uint, hexesPerStrip uint, palette []
 	return strips, nil
 }
 
-func HexagonalGrid(seed int64, horizontalStrips uint, hexesPerStrip uint, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) (string, error) {
+func HexagonalGrid(seed int64, horizontalStrips uint, hexesPerStrip uint, start uint, strokeRed, strokeGreen, strokeBlue uint, strokeWidth float32) (string, error) {
 	if strokeRed > 255 || strokeGreen > 255 || strokeBlue > 255 {
 		return "", ErrInvalidColor
 	}
@@ -243,7 +259,7 @@ func HexagonalGrid(seed int64, horizontalStrips uint, hexesPerStrip uint, stroke
 
 	result := ""
 
-	strips, stripsErr := hexes(rng, horizontalStrips, hexesPerStrip, DefaultColors, strokeRed, strokeGreen, strokeBlue, strokeWidth)
+	strips, stripsErr := hexes(rng, horizontalStrips, hexesPerStrip, start, DefaultColors, strokeRed, strokeGreen, strokeBlue, strokeWidth)
 	if stripsErr != nil {
 		return result, stripsErr
 	}

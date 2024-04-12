@@ -151,7 +151,7 @@ func CreateHexCommand() *cobra.Command {
 
 func CreateBoardCommand() *cobra.Command {
 	var outfile string
-	var strips, hexesPerStrip, strokeRed, strokeGreen, strokeBlue uint
+	var strips, hexesPerStrip, strokeRed, strokeGreen, strokeBlue, start uint
 	var strokeWidth float32
 	var seed int64
 	boardCmd := &cobra.Command{
@@ -167,7 +167,7 @@ func CreateBoardCommand() *cobra.Command {
 				return err
 			}
 
-			hex, err := game.HexagonalGrid(seed, strips, hexesPerStrip, strokeRed, strokeGreen, strokeBlue, strokeWidth)
+			hex, err := game.HexagonalGrid(seed, strips, hexesPerStrip, start, strokeRed, strokeGreen, strokeBlue, strokeWidth)
 			if err != nil {
 				return err
 			}
@@ -195,6 +195,7 @@ func CreateBoardCommand() *cobra.Command {
 	boardCmd.Flags().UintVarP(&strokeGreen, "stroke-green", "G", 0, "The green component of the stroke color")
 	boardCmd.Flags().UintVarP(&strokeBlue, "stroke-blue", "B", 0, "The blue component of the stroke color")
 	boardCmd.Flags().Float32VarP(&strokeWidth, "stroke-width", "w", 0.1, "The width of the stroke")
+	boardCmd.Flags().UintVar(&start, "start", 0, "The vertical position of the easternmost hexes")
 
 	return boardCmd
 }
