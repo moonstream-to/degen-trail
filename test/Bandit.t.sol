@@ -257,7 +257,7 @@ contract BanditTest is Test {
         bandit.rollForNFT(address(nfts), tokenID);
         vm.roll(block.number + blockDeadline + 1);
         vm.expectRevert(abi.encodeWithSelector(Bandit.NFTDeadlineExceeded.selector, address(nfts), tokenID));
-        bandit.resolveForNFT(address(nfts), tokenID);
+        bandit.rerollForNFT(address(nfts), tokenID);
         vm.stopPrank();
     }
 }
