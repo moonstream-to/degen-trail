@@ -1,14 +1,17 @@
 # Bandit
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/8a29ea3d24ab1922e046dedcca5489cb33d208bb/src/Bandit.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/91d599fa04455251df8a05693dc047b6ec0fd0cd/src/Bandit.sol)
 
 **Author:**
 Moonstream Engineering (engineering@moonstream.to)
+
 A Bandit implements a fully on-chain single-player fog-of-war mechanic that produces RNG via two
 player-submitted transactions. First, a player submits a transaction expressing their intent to
 generate RNG. Second, the player submits a transaction that uses RNG derived from the block hash
 of their first transaction.
+
 The player has a limited number of blocks to submit the second transaction. If they fail to submit
 it in time, the entropy is wasted.
+
 The player may also elect to re-roll RNG by submitting a new transaction before the block deadline
 in which they pay a fee to re-roll. If they elect to do this, the block hash of the block in which
 the transaction representing their intent to re-roll is used as the new source of entropy. The block
@@ -79,6 +82,15 @@ function _postRoll() internal virtual;
 ```solidity
 constructor(uint256 blocksToAct, address feeTokenAddress, uint256 rollFee, uint256 rerollFee);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`blocksToAct`|`uint256`|Number of blocks that a player has to decide whether to accept their fate or re-roll. This parameter applies to every such decision point.|
+|`feeTokenAddress`|`address`|Address of ERC20 token which represents fees.|
+|`rollFee`|`uint256`|Fee for first roll on any action.|
+|`rerollFee`|`uint256`|Fee for re-roll on any action, assuming player doesn't want to accept their fate.|
+
 
 ### _checkNFTOwnership
 
