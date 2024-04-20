@@ -33,6 +33,15 @@ contract DegenTrailTest is Test {
     function test_neighborsp() public view {
         assertTrue(game.neighborsp(0, 0, 1, 1));
         assertTrue(game.neighborsp(0, 0, 0, 2));
+        assertFalse(game.neighborsp(0, 0, 2, 0));
+        assertTrue(game.neighborsp(0, 2, 1, 1));
+        assertTrue(game.neighborsp(0, 2, 1, 3));
+        assertTrue(game.neighborsp(293408, 148, 293407, 147));
+        assertTrue(game.neighborsp(293408, 148, 293407, 149));
+        assertTrue(game.neighborsp(293408, 148, 293409, 149));
+        assertTrue(game.neighborsp(293408, 148, 293409, 147));
+        assertTrue(game.neighborsp(293408, 148, 293408, 146));
+        assertTrue(game.neighborsp(293408, 148, 293408, 150));
     }
 }
 
