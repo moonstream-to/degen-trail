@@ -266,7 +266,7 @@ func HexagonalGrid(seed int64, horizontalStrips uint, hexesPerStrip uint, start 
 
 	for i := 0; i < int(horizontalStrips); i++ {
 		horizontalOffset := 0.0
-		if i%2 == 1 {
+		if i%2 == 0 {
 			horizontalOffset = 1.5
 		}
 		stripParams := HexagonalStripParameters{
