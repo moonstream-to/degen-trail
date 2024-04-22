@@ -67,11 +67,10 @@ contract DegenTrailTest is Test {
         uint256[2][] memory indices = new uint256[2][](100);
         for (uint256 j = 0; j < 100; j++) {
             indices[j][0] = 0;
-            indices[j][1] = 2*j;
+            indices[j][1] = 2 * j;
         }
 
         uint256[3][] memory states = game.board(indices);
-
 
         uint256 priorBlockNumber = deploymentBlock;
         if (priorBlockNumber > 0) {
@@ -81,7 +80,7 @@ contract DegenTrailTest is Test {
 
         for (uint256 k = 0; k < 100; k++) {
             assertEq(states[k][0], 0);
-            assertEq(states[k][1], 2*k);
+            assertEq(states[k][1], 2 * k);
             assertEq(states[k][2] % 2, 1);
 
             uint256 terrainType = states[k][2] >> 1;
@@ -89,9 +88,8 @@ contract DegenTrailTest is Test {
             uint8 hexEntropy = uint8((startingEntropy + (31 * k)) & 0x7F);
             assertLt(hexEntropy, game.EnvironmentDistributions(0, terrainType));
             if (terrainType < 6) {
-                assertGe(hexEntropy, game.EnvironmentDistributions(0, terrainType+1));
+                assertGe(hexEntropy, game.EnvironmentDistributions(0, terrainType + 1));
             }
         }
     }
 }
-

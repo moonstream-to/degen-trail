@@ -11,8 +11,8 @@ import {Bandit} from "./Bandit.sol";
 /// @notice This is the game contract for The Degen Trail, a fully on-chain degenerate homage to The Oregon
 /// Trail.
 contract DegenTrail is Bandit, ERC20 {
-    uint256 constant private u8mask = 0xFF;
-    uint256 constant private u7mask = 0x7F;
+    uint256 private constant u8mask = 0xFF;
+    uint256 private constant u7mask = 0x7F;
 
     /// @notice Maps (i,j)-indices (vertical then horizontal) to the state of the corresponding hex on the game board.
     mapping(uint256 => mapping(uint256 => uint256)) public Hex;
@@ -33,7 +33,10 @@ contract DegenTrail is Bandit, ERC20 {
     /// @param blocksToAct Number of blocks that a player has to decide whether to accept their fate or re-roll. This parameter applies to every such decision point.
     /// @param rollFee Fee for first roll on any action.
     /// @param rerollFee Fee for re-roll on any action, assuming player doesn't want to accept their fate.
-    constructor(uint256 blocksToAct, uint256 rollFee, uint256 rerollFee) Bandit(blocksToAct, address(this), rollFee, rerollFee) ERC20("Supply", "SUPPLY") {
+    constructor(uint256 blocksToAct, uint256 rollFee, uint256 rerollFee)
+        Bandit(blocksToAct, address(this), rollFee, rerollFee)
+        ERC20("Supply", "SUPPLY")
+    {
         uint256 prevBlockNumber = 0;
         if (block.number > 0) {
             prevBlockNumber = block.number - 1;
@@ -41,7 +44,7 @@ contract DegenTrail is Bandit, ERC20 {
         // Zero out the leading 12 bits of the block hash, to prevent overflows when adding 31 * j.
         uint256 startingEntropy = uint256(blockhash(prevBlockNumber)) >> 12 << 12;
         for (uint256 j = 0; j < 100; j++) {
-            _explore(0, 2*j, startingEntropy + (31 * j));
+            _explore(0, 2 * j, startingEntropy + (31 * j));
         }
     }
 
@@ -75,7 +78,7 @@ contract DegenTrail is Bandit, ERC20 {
 
     /// @notice Describes the environment of a hex with the given j-coordinate.
     function environment(uint256 i) public pure returns (uint256) {
-        return 3*(i >> 5) % 7;
+        return 3 * (i >> 5) % 7;
     }
 
     /// @notice Returns true if (i,j) is a valid coordinate for a hex on the game board.
