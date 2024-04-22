@@ -11,7 +11,8 @@ import {Bandit} from "./Bandit.sol";
 /// @notice This is the game contract for The Degen Trail, a fully on-chain degenerate homage to The Oregon
 /// Trail.
 contract DegenTrail is Bandit, ERC20 {
-    uint256 constant private u8mask = 2^8 - 1;
+    uint256 constant private u8mask = 0xFF;
+    uint256 constant private u7mask = 0x7F;
 
     /// @notice Maps (i,j)-indices (vertical then horizontal) to the state of the corresponding hex on the game board.
     mapping(uint256 => mapping(uint256 => uint256)) public Hex;
@@ -32,11 +33,49 @@ contract DegenTrail is Bandit, ERC20 {
     /// @param blocksToAct Number of blocks that a player has to decide whether to accept their fate or re-roll. This parameter applies to every such decision point.
     /// @param rollFee Fee for first roll on any action.
     /// @param rerollFee Fee for re-roll on any action, assuming player doesn't want to accept their fate.
-    constructor(uint256 blocksToAct, uint256 rollFee, uint256 rerollFee) Bandit(blocksToAct, address(this), rollFee, rerollFee) ERC20("Supply", "SUPPLY") {}
+    constructor(uint256 blocksToAct, uint256 rollFee, uint256 rerollFee) Bandit(blocksToAct, address(this), rollFee, rerollFee) ERC20("Supply", "SUPPLY") {
+        uint256 prevBlockNumber = 0;
+        if (block.number > 0) {
+            prevBlockNumber = block.number - 1;
+        }
+        // Zero out the leading 12 bits of the block hash, to prevent overflows when adding 31 * j.
+        uint256 startingEntropy = uint256(blockhash(prevBlockNumber)) >> 12 << 12;
+        for (uint256 j = 0; j < 100; j++) {
+            _explore(0, 2*j, startingEntropy + (31 * j));
+        }
+    }
+
+    /// @notice Internal method that explores a hex and sets its state.
+    function _explore(uint256 i, uint256 j, uint256 entropy) internal {
+        uint256 env = environment(i);
+        uint8 maskedEntropy = uint8(entropy & u7mask);
+        if (maskedEntropy < EnvironmentDistributions[env][6]) {
+            // 1111
+            Hex[i][j] = 13;
+        } else if (maskedEntropy < EnvironmentDistributions[env][5]) {
+            // 1011
+            Hex[i][j] = 11;
+        } else if (maskedEntropy < EnvironmentDistributions[env][4]) {
+            // 1001
+            Hex[i][j] = 9;
+        } else if (maskedEntropy < EnvironmentDistributions[env][3]) {
+            // 0111
+            Hex[i][j] = 7;
+        } else if (maskedEntropy < EnvironmentDistributions[env][2]) {
+            // 0101
+            Hex[i][j] = 5;
+        } else if (maskedEntropy < EnvironmentDistributions[env][1]) {
+            // 0011
+            Hex[i][j] = 3;
+        } else {
+            // 0001
+            Hex[i][j] = 1;
+        }
+    }
 
     /// @notice Describes the environment of a hex with the given j-coordinate.
-    function environment(uint256 j) public pure returns (uint256) {
-        return 3*(j >> 5) % 7;
+    function environment(uint256 i) public pure returns (uint256) {
+        return 3*(i >> 5) % 7;
     }
 
     /// @notice Returns true if (i,j) is a valid coordinate for a hex on the game board.
@@ -80,5 +119,18 @@ contract DegenTrail is Bandit, ERC20 {
         }
 
         return false;
+    }
+
+    /// @notice Returns the current state of the board for the hexes with the given indices.
+    /// @dev This method is provided for convenience. Another alternative to calling this method would be to
+    /// view the Hex mapping via a multicall contract.
+    function board(uint256[2][] memory indices) external view returns (uint256[3][] memory) {
+        uint256[3][] memory result = new uint256[3][](indices.length);
+        for (uint256 i = 0; i < indices.length; i++) {
+            result[i][0] = indices[i][0];
+            result[i][1] = indices[i][1];
+            result[i][2] = Hex[indices[i][0]][indices[i][1]];
+        }
+        return result;
     }
 }
