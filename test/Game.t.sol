@@ -43,5 +43,22 @@ contract DegenTrailTest is Test {
         assertTrue(game.neighborsp(293408, 148, 293408, 146));
         assertTrue(game.neighborsp(293408, 148, 293408, 150));
     }
+
+    function test_environment() public view {
+        // j = 0: 0
+        assertEq(game.environment(0), 0);
+        // j = 27: 0
+        assertEq(game.environment(27), 0);
+        // j = 31: 0
+        assertEq(game.environment(31), 0);
+
+        // j = 3 * 32 + 5 = 101: 2
+        assertEq(game.environment(101), 2);
+        // j = 10 * 32 + 17 = 337: 2
+        assertEq(game.environment(337), 2);
+
+        // j = 256 + 64 + 32 + 9 = 361: 5
+        assertEq(game.environment(361), 5);
+    }
 }
 

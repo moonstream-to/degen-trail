@@ -35,8 +35,8 @@ contract DegenTrail is Bandit, ERC20 {
     constructor(uint256 blocksToAct, uint256 rollFee, uint256 rerollFee) Bandit(blocksToAct, address(this), rollFee, rerollFee) ERC20("Supply", "SUPPLY") {}
 
     /// @notice Describes the environment of a hex with the given j-coordinate.
-    function environment(uint256 j) public pure returns (uint8) {
-        return uint8(u8mask & (3*(j >> 5) % 7));
+    function environment(uint256 j) public pure returns (uint256) {
+        return 3*(j >> 5) % 7;
     }
 
     /// @notice Returns true if (i,j) is a valid coordinate for a hex on the game board.
