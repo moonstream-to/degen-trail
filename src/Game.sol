@@ -15,6 +15,9 @@ contract DegenTrail is Bandit, ERC20 {
     uint256 private constant u7mask = 0x7F;
 
     /// @notice Maps (i,j)-indices (vertical then horizontal) to the state of the corresponding hex on the game board.
+    /// @notice State is encoded in binary. The layout of the state is: TTTE.
+    /// @notice E: The least significant bit is 1 if the hex has been explored and 0 otherwise.
+    /// @notice T: The 2^1, 2^2, and 2^3 bits form an integer representing the terrain type. It is an integer between 0 and 6 (inclusive). View the description of EnvironmentDescriptions to see the corresponding terrain type.
     mapping(uint256 => mapping(uint256 => uint256)) public Hex;
 
     /// @notice For each environment, lists the cumulative distribution function for terrains in that environment.
