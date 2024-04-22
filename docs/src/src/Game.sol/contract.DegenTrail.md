@@ -1,5 +1,5 @@
 # DegenTrail
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/91d599fa04455251df8a05693dc047b6ec0fd0cd/src/Game.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/3d1ff82bf5259e5be0b7f66e874abdb08785d375/src/Game.sol)
 
 **Inherits:**
 [Bandit](/src/Bandit.sol/contract.Bandit.md), ERC20
@@ -15,12 +15,25 @@ Trail.
 ### u8mask
 
 ```solidity
-uint256 private constant u8mask = 2 ^ 8 - 1;
+uint256 private constant u8mask = 0xFF;
+```
+
+
+### u7mask
+
+```solidity
+uint256 private constant u7mask = 0x7F;
 ```
 
 
 ### Hex
 Maps (i,j)-indices (vertical then horizontal) to the state of the corresponding hex on the game board.
+
+State is encoded in binary. The layout of the state is: TTTE.
+
+E: The least significant bit is 1 if the hex has been explored and 0 otherwise.
+
+T: The 2^1, 2^2, and 2^3 bits form an integer representing the terrain type. It is an integer between 0 and 6 (inclusive). View the description of EnvironmentDescriptions to see the corresponding terrain type.
 
 
 ```solidity
@@ -67,13 +80,22 @@ constructor(uint256 blocksToAct, uint256 rollFee, uint256 rerollFee)
 |`rerollFee`|`uint256`|Fee for re-roll on any action, assuming player doesn't want to accept their fate.|
 
 
+### _explore
+
+Internal method that explores a hex and sets its state.
+
+
+```solidity
+function _explore(uint256 i, uint256 j, uint256 entropy) internal;
+```
+
 ### environment
 
 Describes the environment of a hex with the given j-coordinate.
 
 
 ```solidity
-function environment(uint256 j) public pure returns (uint8);
+function environment(uint256 i) public pure returns (uint256);
 ```
 
 ### hexp
@@ -98,5 +120,17 @@ Returns true if (i1,j1) and (i2,j2) are neighbors on the game board.
 
 ```solidity
 function neighborsp(uint256 i1, uint256 j1, uint256 i2, uint256 j2) public pure returns (bool);
+```
+
+### board
+
+Returns the current state of the board for the hexes with the given indices.
+
+*This method is provided for convenience. Another alternative to calling this method would be to
+view the Hex mapping via a multicall contract.*
+
+
+```solidity
+function board(uint256[2][] memory indices) external view returns (uint256[3][] memory);
 ```
 

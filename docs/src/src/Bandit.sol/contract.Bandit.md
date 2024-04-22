@@ -1,5 +1,5 @@
 # Bandit
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/91d599fa04455251df8a05693dc047b6ec0fd0cd/src/Bandit.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/3d1ff82bf5259e5be0b7f66e874abdb08785d375/src/Bandit.sol)
 
 **Author:**
 Moonstream Engineering (engineering@moonstream.to)
