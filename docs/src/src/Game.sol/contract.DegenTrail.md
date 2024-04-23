@@ -1,8 +1,8 @@
 # DegenTrail
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/3d1ff82bf5259e5be0b7f66e874abdb08785d375/src/Game.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/86e9cb2e87f3a2ab0e67804602112ff5b0b272b0/src/Game.sol)
 
 **Inherits:**
-[Bandit](/src/Bandit.sol/contract.Bandit.md), ERC20
+ERC20
 
 **Author:**
 Moonstream Engineering (engineering@moonstream.to)
@@ -67,18 +67,35 @@ uint8[7][7] public EnvironmentDistributions = [
 
 
 ```solidity
-constructor(uint256 blocksToAct, uint256 rollFee, uint256 rerollFee)
-    Bandit(blocksToAct, address(this), rollFee, rerollFee)
-    ERC20("Supply", "SUPPLY");
+constructor() ERC20("Supply", "SUPPLY");
 ```
-**Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`blocksToAct`|`uint256`|Number of blocks that a player has to decide whether to accept their fate or re-roll. This parameter applies to every such decision point.|
-|`rollFee`|`uint256`|Fee for first roll on any action.|
-|`rerollFee`|`uint256`|Fee for re-roll on any action, assuming player doesn't want to accept their fate.|
+### decimals
 
+The SUPPLY ERC20 token has 0 decimal places.
+
+
+```solidity
+function decimals() public pure override returns (uint8);
+```
+
+### burn
+
+Burns the given amount from the SUPPLY held by msg.sender.
+
+
+```solidity
+function burn(uint256 amount) external;
+```
+
+### incinerate
+
+Burns all the SUPPLY held by msg.sender.
+
+
+```solidity
+function incinerate() external;
+```
 
 ### _explore
 
@@ -91,7 +108,7 @@ function _explore(uint256 i, uint256 j, uint256 entropy) internal;
 
 ### environment
 
-Describes the environment of a hex with the given j-coordinate.
+Describes the environment of a hex with the given i-coordinate.
 
 
 ```solidity

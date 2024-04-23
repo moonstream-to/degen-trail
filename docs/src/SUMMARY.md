@@ -1,5 +1,9 @@
 # Summary
 - [Home](README.md)
 # src
-  - [Bandit](src/Bandit.sol/contract.Bandit.md)
+  - [PlayerBandit](src/Bandit.sol/contract.PlayerBandit.md)
+  - [NFTBandit](src/Bandit.sol/contract.NFTBandit.md)
   - [DegenTrail](src/Game.sol/contract.DegenTrail.md)
+  - [DegenTrailStats](src/data.sol/struct.DegenTrailStats.md)
+  - [IDegenTrail](src/interfaces.sol/interface.IDegenTrail.md)
+  - [DegenTrailNFT](src/nfts.sol/contract.DegenTrailNFT.md)
