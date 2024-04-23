@@ -5,7 +5,7 @@ import {ERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.s
 import {ERC721} from "../lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 
 import "forge-std/Test.sol";
-import "../src/Bandit.sol";
+import {PlayerBandit, NFTBandit} from "../src/Bandit.sol";
 
 contract MockERC20 is ERC20 {
     constructor() ERC20("test", "test") {}
@@ -31,24 +31,31 @@ contract MockERC721 is ERC721 {
     }
 }
 
-contract MockBandit is Bandit {
+contract MockPlayerBandit is PlayerBandit {
     constructor(uint256 blocksToAct, address feeTokenAddress, uint256 rollFee, uint256 rerollFee)
-        Bandit(blocksToAct, feeTokenAddress, rollFee, rerollFee)
+        PlayerBandit(blocksToAct, feeTokenAddress, rollFee, rerollFee)
     {}
 
     function resolveForPlayer() public returns (uint256) {
         return _entropyForPlayer(msg.sender);
     }
 
+}
+
+contract MockNFTBandit is NFTBandit {
+    constructor(uint256 blocksToAct, address feeTokenAddress, uint256 rollFee, uint256 rerollFee)
+        NFTBandit(blocksToAct, feeTokenAddress, rollFee, rerollFee)
+    {}
+
     function resolveForNFT(address tokenAddress, uint256 tokenID) public returns (uint256) {
         return _entropyForNFT(tokenAddress, tokenID);
     }
 }
 
-contract BanditTest is Test {
+
+contract PlayerBanditTest is Test {
     MockERC20 public feeToken;
-    MockBandit public bandit;
-    MockERC721 public nfts;
+    MockPlayerBandit public bandit;
 
     uint256 player1PrivateKey = 0x1;
     address player1 = vm.addr(player1PrivateKey);
@@ -59,14 +66,11 @@ contract BanditTest is Test {
 
     // Bandit events
     event PlayerRoll(address indexed player);
-    event NFTRoll(address indexed tokenAddress, uint256 indexed tokenID);
     event PlayerEntropyUsed(address indexed player, uint256 entropy);
-    event NFTEntropyUsed(address indexed tokenAddress, uint256 indexed tokenID, uint256 entropy);
 
     function setUp() public {
         feeToken = new MockERC20();
-        bandit = new MockBandit(blockDeadline, address(feeToken), rollFee, rerollFee);
-        nfts = new MockERC721();
+        bandit = new MockPlayerBandit(blockDeadline, address(feeToken), rollFee, rerollFee);
     }
 
     /**
@@ -81,7 +85,7 @@ contract BanditTest is Test {
         vm.expectEmit(true, true, false, false, address(bandit));
         emit PlayerRoll(player1);
         bandit.rollForPlayer();
-        vm.expectRevert(abi.encodeWithSelector(Bandit.WaitForPlayerTick.selector, player1));
+        vm.expectRevert(abi.encodeWithSelector(PlayerBandit.WaitForPlayerTick.selector, player1));
         bandit.resolveForPlayer();
         vm.stopPrank();
     }
@@ -120,9 +124,68 @@ contract BanditTest is Test {
         emit PlayerRoll(player1);
         bandit.rollForPlayer();
         vm.roll(block.number + blockDeadline + 1);
-        vm.expectRevert(abi.encodeWithSelector(Bandit.PlayerDeadlineExceeded.selector, player1));
+        vm.expectRevert(abi.encodeWithSelector(PlayerBandit.PlayerDeadlineExceeded.selector, player1));
         bandit.resolveForPlayer();
         vm.stopPrank();
+    }
+
+    /**
+     * Tests:
+     * - rollForPlayer
+     * - rerollForPlayer
+     */
+    function test_reroll_for_player() public {
+        vm.startPrank(player1);
+        feeToken.mint(player1, rollFee + rerollFee);
+        feeToken.approve(address(bandit), rollFee + rerollFee);
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerRoll(player1);
+        bandit.rollForPlayer();
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerRoll(player1);
+        bandit.rerollForPlayer();
+        vm.stopPrank();
+    }
+
+    /**
+     * Tests:
+     * - rollForPlayer
+     * - rerollForPlayer
+     */
+    function test_reroll_for_player_fails_after_block_deadline() public {
+        vm.startPrank(player1);
+        feeToken.mint(player1, rollFee + rerollFee);
+        feeToken.approve(address(bandit), rollFee + rerollFee);
+        vm.expectEmit(true, true, false, false, address(bandit));
+        emit PlayerRoll(player1);
+        bandit.rollForPlayer();
+        vm.roll(block.number + blockDeadline + 1);
+        vm.expectRevert(abi.encodeWithSelector(PlayerBandit.PlayerDeadlineExceeded.selector, player1));
+        bandit.rerollForPlayer();
+        vm.stopPrank();
+    }
+}
+
+contract NFTBanditTest is Test {
+    MockERC20 public feeToken;
+    MockNFTBandit public bandit;
+    MockERC721 public nfts;
+
+    uint256 player1PrivateKey = 0x1;
+    address player1 = vm.addr(player1PrivateKey);
+
+    uint256 blockDeadline = 30;
+    uint256 rollFee = 10;
+    uint256 rerollFee = 3;
+
+    // Bandit events
+    event NFTRoll(address indexed tokenAddress, uint256 indexed tokenID);
+    event NFTEntropyUsed(address indexed tokenAddress, uint256 indexed tokenID, uint256 entropy);
+
+    function setUp() public {
+        feeToken = new MockERC20();
+        bandit = new MockNFTBandit(blockDeadline, address(feeToken), rollFee, rerollFee);
+        nfts = new MockERC721();
     }
 
     /**
@@ -139,7 +202,7 @@ contract BanditTest is Test {
         vm.expectEmit(true, true, true, false, address(bandit));
         emit NFTRoll(address(nfts), tokenID);
         bandit.rollForNFT(address(nfts), tokenID);
-        vm.expectRevert(abi.encodeWithSelector(Bandit.WaitForNFTTick.selector, address(nfts), tokenID));
+        vm.expectRevert(abi.encodeWithSelector(NFTBandit.WaitForNFTTick.selector, address(nfts), tokenID));
         bandit.resolveForNFT(address(nfts), tokenID);
         vm.stopPrank();
     }
@@ -182,44 +245,8 @@ contract BanditTest is Test {
         emit NFTRoll(address(nfts), tokenID);
         bandit.rollForNFT(address(nfts), tokenID);
         vm.roll(block.number + blockDeadline + 1);
-        vm.expectRevert(abi.encodeWithSelector(Bandit.NFTDeadlineExceeded.selector, address(nfts), tokenID));
+        vm.expectRevert(abi.encodeWithSelector(NFTBandit.NFTDeadlineExceeded.selector, address(nfts), tokenID));
         bandit.resolveForNFT(address(nfts), tokenID);
-        vm.stopPrank();
-    }
-
-    /**
-     * Tests:
-     * - rollForPlayer
-     * - rerollForPlayer
-     */
-    function test_reroll_for_player() public {
-        vm.startPrank(player1);
-        feeToken.mint(player1, rollFee + rerollFee);
-        feeToken.approve(address(bandit), rollFee + rerollFee);
-        vm.expectEmit(true, true, false, false, address(bandit));
-        emit PlayerRoll(player1);
-        bandit.rollForPlayer();
-        vm.expectEmit(true, true, false, false, address(bandit));
-        emit PlayerRoll(player1);
-        bandit.rerollForPlayer();
-        vm.stopPrank();
-    }
-
-    /**
-     * Tests:
-     * - rollForPlayer
-     * - rerollForPlayer
-     */
-    function test_reroll_for_player_fails_after_block_deadline() public {
-        vm.startPrank(player1);
-        feeToken.mint(player1, rollFee + rerollFee);
-        feeToken.approve(address(bandit), rollFee + rerollFee);
-        vm.expectEmit(true, true, false, false, address(bandit));
-        emit PlayerRoll(player1);
-        bandit.rollForPlayer();
-        vm.roll(block.number + blockDeadline + 1);
-        vm.expectRevert(abi.encodeWithSelector(Bandit.PlayerDeadlineExceeded.selector, player1));
-        bandit.rerollForPlayer();
         vm.stopPrank();
     }
 
@@ -258,7 +285,7 @@ contract BanditTest is Test {
         emit NFTRoll(address(nfts), tokenID);
         bandit.rollForNFT(address(nfts), tokenID);
         vm.roll(block.number + blockDeadline + 1);
-        vm.expectRevert(abi.encodeWithSelector(Bandit.NFTDeadlineExceeded.selector, address(nfts), tokenID));
+        vm.expectRevert(abi.encodeWithSelector(NFTBandit.NFTDeadlineExceeded.selector, address(nfts), tokenID));
         bandit.resolveForNFT(address(nfts), tokenID);
         vm.stopPrank();
     }
