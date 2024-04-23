@@ -82,7 +82,7 @@ contract DegenTrail is ERC20 {
         }
     }
 
-    /// @notice Describes the environment of a hex with the given j-coordinate.
+    /// @notice Describes the environment of a hex with the given i-coordinate.
     function environment(uint256 i) public pure returns (uint256) {
         return 3 * (i >> 5) % 7;
     }
