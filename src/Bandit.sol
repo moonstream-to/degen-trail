@@ -5,23 +5,21 @@ import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20
 import {IERC721} from "../lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import {SafeERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/**
- * @title Degen Trail bandit contract
- * @author Moonstream Engineering (engineering@moonstream.to)
- *
- * A Bandit implements a fully on-chain single-player fog-of-war mechanic that produces RNG via two
- * player-submitted transactions. First, a player submits a transaction expressing their intent to
- * generate RNG. Second, the player submits a transaction that uses RNG derived from the block hash
- * of their first transaction.
- *
- * The player has a limited number of blocks to submit the second transaction. If they fail to submit
- * it in time, the entropy is wasted.
- *
- * The player may also elect to re-roll RNG by submitting a new transaction before the block deadline
- * in which they pay a fee to re-roll. If they elect to do this, the block hash of the block in which
- * the transaction representing their intent to re-roll is used as the new source of entropy. The block
- * deadline is then calculated from this transaction block.
- */
+/// @title Degen Trail bandit contract
+/// @author Moonstream Engineering (engineering@moonstream.to)
+///
+/// @notice A Bandit implements a fully on-chain single-player fog-of-war mechanic that produces RNG via two
+/// player-submitted transactions. First, a player submits a transaction expressing their intent to
+/// generate RNG. Second, the player submits a transaction that uses RNG derived from the block hash
+/// of their first transaction.
+///
+/// @notice The player has a limited number of blocks to submit the second transaction. If they fail to submit
+/// it in time, the entropy is wasted.
+///
+/// @notice The player may also elect to re-roll RNG by submitting a new transaction before the block deadline
+/// in which they pay a fee to re-roll. If they elect to do this, the block hash of the block in which
+/// the transaction representing their intent to re-roll is used as the new source of entropy. The block
+/// deadline is then calculated from this transaction block.
 contract Bandit {
     using SafeERC20 for IERC20;
 
@@ -61,6 +59,10 @@ contract Bandit {
     function _preRollForNFT(address tokenAddress, uint256 tokenID) internal virtual {}
     function _postRoll() internal virtual {}
 
+    /// @param blocksToAct Number of blocks that a player has to decide whether to accept their fate or re-roll. This parameter applies to every such decision point.
+    /// @param feeTokenAddress Address of ERC20 token which represents fees.
+    /// @param rollFee Fee for first roll on any action.
+    /// @param rerollFee Fee for re-roll on any action, assuming player doesn't want to accept their fate.
     constructor(uint256 blocksToAct, address feeTokenAddress, uint256 rollFee, uint256 rerollFee) {
         BlocksToAct = blocksToAct;
         FeeToken = IERC20(feeTokenAddress);
