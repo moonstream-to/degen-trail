@@ -24,7 +24,7 @@ contract PlayerBandit {
     using SafeERC20 for IERC20;
 
     event PlayerRoll(address indexed player);
-    event PlayerEntropyUsed(address indexed player, uint256 entropy);
+    event PlayerEntropyUsed(address indexed player, bytes32 entropy);
 
     // Number of blocks that players have to act once. Exceeding this deadline after their roll action
     // will result in the roll being wasted.
@@ -79,10 +79,10 @@ contract PlayerBandit {
         }
     }
 
-    function _entropyForPlayer(address player) internal returns (uint256) {
+    function _entropyForPlayer(address player) internal returns (bytes32) {
         _checkPlayerDeadline(player);
         _waitForTickForPlayer(player);
-        uint256 entropy = uint256(blockhash(LastRollForPlayer[player]));
+        bytes32 entropy = blockhash(LastRollForPlayer[player]);
         emit PlayerEntropyUsed(player, entropy);
         delete LastRollForPlayer[player];
         return entropy;
@@ -107,7 +107,7 @@ contract NFTBandit {
     using SafeERC20 for IERC20;
 
     event NFTRoll(address indexed tokenAddress, uint256 indexed tokenID);
-    event NFTEntropyUsed(address indexed tokenAddress, uint256 indexed tokenID, uint256 entropy);
+    event NFTEntropyUsed(address indexed tokenAddress, uint256 indexed tokenID, bytes32 entropy);
 
     // Number of blocks that players have to act once. Exceeding this deadline after their roll action
     // will result in the roll being wasted.
@@ -176,10 +176,10 @@ contract NFTBandit {
         }
     }
 
-    function _entropyForNFT(address tokenAddress, uint256 tokenID) internal returns (uint256) {
+    function _entropyForNFT(address tokenAddress, uint256 tokenID) internal returns (bytes32) {
         _checkNFTDeadline(tokenAddress, tokenID);
         _waitForTickForNFT(tokenAddress, tokenID);
-        uint256 entropy = uint256(blockhash(LastRollForNFT[tokenAddress][tokenID]));
+        bytes32 entropy = blockhash(LastRollForNFT[tokenAddress][tokenID]);
         emit NFTEntropyUsed(tokenAddress, tokenID, entropy);
         delete LastRollForNFT[tokenAddress][tokenID];
         return entropy;

@@ -8,6 +8,8 @@ import {ERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.s
 ///
 /// @notice This is the game contract for The Degen Trail, a fully on-chain degenerate homage to The Oregon
 /// Trail.
+// TODO(zomglings): Jackpot mechanic, with a corresponding tax on all burns. Might want to turn up the decimals
+// to mitigate the rounding effects integer division when imposing the tax.
 contract DegenTrail is ERC20 {
     uint256 private constant u8mask = 0xFF;
     uint256 private constant u7mask = 0x7F;
@@ -52,6 +54,16 @@ contract DegenTrail is ERC20 {
     /// @notice The SUPPLY ERC20 token has 0 decimal places.
     function decimals() public pure override returns (uint8) {
         return 0;
+    }
+
+    /// @notice Burns the given amount from the SUPPLY held by msg.sender.
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+
+    /// @notice Burns all the SUPPLY held by msg.sender.
+    function incinerate() external {
+        _burn(msg.sender, balanceOf(msg.sender));
     }
 
     /// @notice Internal method that explores a hex and sets its state.

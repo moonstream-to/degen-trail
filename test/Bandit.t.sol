@@ -36,7 +36,7 @@ contract MockPlayerBandit is PlayerBandit {
         PlayerBandit(blocksToAct, feeTokenAddress, rollFee, rerollFee)
     {}
 
-    function resolveForPlayer() public returns (uint256) {
+    function resolveForPlayer() public returns (bytes32) {
         return _entropyForPlayer(msg.sender);
     }
 
@@ -47,7 +47,7 @@ contract MockNFTBandit is NFTBandit {
         NFTBandit(blocksToAct, feeTokenAddress, rollFee, rerollFee)
     {}
 
-    function resolveForNFT(address tokenAddress, uint256 tokenID) public returns (uint256) {
+    function resolveForNFT(address tokenAddress, uint256 tokenID) public returns (bytes32) {
         return _entropyForNFT(tokenAddress, tokenID);
     }
 }
@@ -66,7 +66,7 @@ contract PlayerBanditTest is Test {
 
     // Bandit events
     event PlayerRoll(address indexed player);
-    event PlayerEntropyUsed(address indexed player, uint256 entropy);
+    event PlayerEntropyUsed(address indexed player, bytes32 entropy);
 
     function setUp() public {
         feeToken = new MockERC20();
@@ -103,10 +103,10 @@ contract PlayerBanditTest is Test {
         emit PlayerRoll(player1);
         bandit.rollForPlayer();
         vm.roll(block.number + 1);
-        uint256 expectedEntropy = uint256(blockhash(block.number - 1));
+        bytes32 expectedEntropy = blockhash(block.number - 1);
         vm.expectEmit(true, true, false, false, address(bandit));
         emit PlayerEntropyUsed(player1, expectedEntropy);
-        uint256 entropy = bandit.resolveForPlayer();
+        bytes32 entropy = bandit.resolveForPlayer();
         assertEq(entropy, expectedEntropy);
         vm.stopPrank();
     }
@@ -180,7 +180,7 @@ contract NFTBanditTest is Test {
 
     // Bandit events
     event NFTRoll(address indexed tokenAddress, uint256 indexed tokenID);
-    event NFTEntropyUsed(address indexed tokenAddress, uint256 indexed tokenID, uint256 entropy);
+    event NFTEntropyUsed(address indexed tokenAddress, uint256 indexed tokenID, bytes32 entropy);
 
     function setUp() public {
         feeToken = new MockERC20();
@@ -222,10 +222,10 @@ contract NFTBanditTest is Test {
         emit NFTRoll(address(nfts), tokenID);
         bandit.rollForNFT(address(nfts), 2);
         vm.roll(block.number + 1);
-        uint256 expectedEntropy = uint256(blockhash(block.number - 1));
+        bytes32 expectedEntropy = blockhash(block.number - 1);
         vm.expectEmit(true, true, false, false, address(bandit));
         emit NFTEntropyUsed(address(nfts), tokenID, expectedEntropy);
-        uint256 entropy = bandit.resolveForNFT(address(nfts), tokenID);
+        bytes32 entropy = bandit.resolveForNFT(address(nfts), tokenID);
         assertEq(entropy, expectedEntropy);
         vm.stopPrank();
     }
