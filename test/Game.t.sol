@@ -88,7 +88,7 @@ contract DegenTrailTest is Test {
         if (priorBlockNumber > 0) {
             priorBlockNumber -= 1;
         }
-        uint256 startingEntropy = uint256(blockhash(priorBlockNumber)) >> 12 << 12;
+        uint256 startingEntropy = uint256(blockhash(priorBlockNumber)) << 1 >> 1;
 
         for (uint256 k = 0; k < 100; k++) {
             assertEq(states[k][0], 0);
