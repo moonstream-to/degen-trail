@@ -129,6 +129,9 @@ contract NFTBandit {
     error WaitForNFTTick(address tokenAddress, uint256 tokenID);
     error NFTNotOwnedByPlayer(address player, address tokenAddress, uint256 tokenID);
 
+    // This is meant to check the game state of the NFT before the roll.
+    // There is no corresponding _preRollForPlayer, because the player will only be rolling to generate
+    // items outside of the context of a run.
     function _preRollForNFT(address tokenAddress, uint256 tokenID) internal virtual {}
     function _postRoll() internal virtual {}
 
