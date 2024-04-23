@@ -10,53 +10,53 @@ pragma solidity ^0.8.13;
 // solface version: 0.2.3
 // Interface ID: 177fa301
 interface IDegenTrail {
-	// structs
+    // structs
 
-	// events
-	event Approval(address owner, address spender, uint256 value);
-	event Transfer(address from, address to, uint256 value);
+    // events
+    event Approval(address owner, address spender, uint256 value);
+    event Transfer(address from, address to, uint256 value);
 
-	// functions
-	// Selector: 9e269ea7
-	function EnvironmentDistributions(uint256 , uint256 ) external view returns (uint8);
-	// Selector: 9160cd57
-	function Hex(uint256 , uint256 ) external view returns (uint256);
-	// Selector: dd62ed3e
-	function allowance(address owner, address spender) external view returns (uint256);
-	// Selector: 095ea7b3
-	function approve(address spender, uint256 value) external  returns (bool);
-	// Selector: 70a08231
-	function balanceOf(address account) external view returns (uint256);
-	// Selector: 4174d402
-	function board(uint256[2][] memory indices) external view returns (uint256[3][] memory);
-	// Selector: 42966c68
-	function burn(uint256 amount) external ;
-	// Selector: 313ce567
-	function decimals() external pure returns (uint8);
-	// Selector: e3fc4210
-	function environment(uint256 i) external pure returns (uint256);
-	// Selector: 33c2e7c4
-	function hexp(uint256 i, uint256 j) external pure returns (bool);
-	// Selector: bbd1d251
-	function incinerate() external ;
-	// Selector: 06fdde03
-	function name() external view returns (string memory);
-	// Selector: e41ab43c
-	function neighborsp(uint256 i1, uint256 j1, uint256 i2, uint256 j2) external pure returns (bool);
-	// Selector: 95d89b41
-	function symbol() external view returns (string memory);
-	// Selector: 18160ddd
-	function totalSupply() external view returns (uint256);
-	// Selector: a9059cbb
-	function transfer(address to, uint256 value) external  returns (bool);
-	// Selector: 23b872dd
-	function transferFrom(address from, address to, uint256 value) external  returns (bool);
+    // functions
+    // Selector: 9e269ea7
+    function EnvironmentDistributions(uint256, uint256) external view returns (uint8);
+    // Selector: 9160cd57
+    function Hex(uint256, uint256) external view returns (uint256);
+    // Selector: dd62ed3e
+    function allowance(address owner, address spender) external view returns (uint256);
+    // Selector: 095ea7b3
+    function approve(address spender, uint256 value) external returns (bool);
+    // Selector: 70a08231
+    function balanceOf(address account) external view returns (uint256);
+    // Selector: 4174d402
+    function board(uint256[2][] memory indices) external view returns (uint256[3][] memory);
+    // Selector: 42966c68
+    function burn(uint256 amount) external;
+    // Selector: 313ce567
+    function decimals() external pure returns (uint8);
+    // Selector: e3fc4210
+    function environment(uint256 i) external pure returns (uint256);
+    // Selector: 33c2e7c4
+    function hexp(uint256 i, uint256 j) external pure returns (bool);
+    // Selector: bbd1d251
+    function incinerate() external;
+    // Selector: 06fdde03
+    function name() external view returns (string memory);
+    // Selector: e41ab43c
+    function neighborsp(uint256 i1, uint256 j1, uint256 i2, uint256 j2) external pure returns (bool);
+    // Selector: 95d89b41
+    function symbol() external view returns (string memory);
+    // Selector: 18160ddd
+    function totalSupply() external view returns (uint256);
+    // Selector: a9059cbb
+    function transfer(address to, uint256 value) external returns (bool);
+    // Selector: 23b872dd
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
 
-	// errors
-	error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
-	error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
-	error ERC20InvalidApprover(address approver);
-	error ERC20InvalidReceiver(address receiver);
-	error ERC20InvalidSender(address sender);
-	error ERC20InvalidSpender(address spender);
+    // errors
+    error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
+    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
+    error ERC20InvalidApprover(address approver);
+    error ERC20InvalidReceiver(address receiver);
+    error ERC20InvalidSender(address sender);
+    error ERC20InvalidSpender(address spender);
 }

@@ -33,9 +33,7 @@ contract DegenTrail is ERC20 {
         [0, 43, 43, 48, 128, 128, 128]
     ];
 
-    constructor()
-        ERC20("Supply", "SUPPLY")
-    {
+    constructor() ERC20("Supply", "SUPPLY") {
         // Mint initial SUPPLY supply to the deployer of this contract.
         _mint(msg.sender, 1000000000);
 

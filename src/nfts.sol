@@ -12,7 +12,7 @@ import {IDegenTrail} from "./interfaces.sol";
 /// @author Moonstream Engineering (engineering@moonstream.to)
 contract DegenTrailNFT is ERC721, ERC721Enumerable, PlayerBandit {
     /// @dev Mask for raw recovery stat: least significant 54 bits
-    uint256 public constant recoveryMask = 2^55 - 1;
+    uint256 public constant recoveryMask = 2 ^ 55 - 1;
     /// @dev Mask for raw repair stat: next 54 bits
     uint256 public constant repairMask = recoveryMask << 54;
     /// @dev Mask for raw fight stat: next 54 bits
@@ -27,7 +27,14 @@ contract DegenTrailNFT is ERC721, ERC721Enumerable, PlayerBandit {
     mapping(uint256 => DegenTrailStats) public stats;
     IDegenTrail public game;
 
-    constructor(string memory _name, string memory _symbol, uint256 blocksToAct, address gameAddress, uint256 rollFee, uint256 rerollFee) ERC721(_name, _symbol) PlayerBandit(blocksToAct, gameAddress, rollFee, rerollFee) {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        uint256 blocksToAct,
+        address gameAddress,
+        uint256 rollFee,
+        uint256 rerollFee
+    ) ERC721(_name, _symbol) PlayerBandit(blocksToAct, gameAddress, rollFee, rerollFee) {
         game = IDegenTrail(gameAddress);
     }
 
@@ -41,20 +48,12 @@ contract DegenTrailNFT is ERC721, ERC721Enumerable, PlayerBandit {
     }
 
     /// @dev Override needed because ERC721Enumerable itself inherits from ERC721
-    function _increaseBalance(address account, uint128 value)
-        internal
-        override(ERC721, ERC721Enumerable)
-    {
+    function _increaseBalance(address account, uint128 value) internal override(ERC721, ERC721Enumerable) {
         super._increaseBalance(account, value);
     }
 
     /// @dev Override needed because ERC721Enumerable itself inherits from ERC721
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
@@ -65,7 +64,12 @@ contract DegenTrailNFT is ERC721, ERC721Enumerable, PlayerBandit {
 
     /// @dev Subclasses should override this to implement their desired post-processing to raw stat generation.
     /// @dev For example, a subclass might want to restruct to fewer than 2^40 - 1 kinds, or might want to limit the speed, etc.
-    function _prepareStats(uint256 kindRaw, uint256 speedRaw, uint256 fightRaw, uint256 repairRaw, uint256 recoveryRaw) internal virtual pure returns (uint256 kind, uint256 speed, uint256 fight, uint256 repair, uint256 recovery) {
+    function _prepareStats(uint256 kindRaw, uint256 speedRaw, uint256 fightRaw, uint256 repairRaw, uint256 recoveryRaw)
+        internal
+        pure
+        virtual
+        returns (uint256 kind, uint256 speed, uint256 fight, uint256 repair, uint256 recovery)
+    {
         kind = kindRaw;
         speed = speedRaw;
         fight = fightRaw;
@@ -76,9 +80,19 @@ contract DegenTrailNFT is ERC721, ERC721Enumerable, PlayerBandit {
     /// @dev Stats are generated from the hash of the concatenation of the player's entropy and address. The resulting 256-bit integer
     /// is then split into:
     /// @dev |- kind: 40 bits -|- speed: 54 bits -|- fight: 54 bits -|- repair: 54 bits -|- recovery: 54 bits -|
-    function generateStats(address player, bytes32 entropy) public pure returns (uint256, uint256, uint256, uint256, uint256) {
+    function generateStats(address player, bytes32 entropy)
+        public
+        pure
+        returns (uint256, uint256, uint256, uint256, uint256)
+    {
         uint256 rng = uint256(keccak256(abi.encode(entropy, player)));
-        return ((rng & kindMask) >> 216, (rng & speedMask) >> 162, (rng & fightMask) >> 108, (rng & recoveryMask) >> 54, rng & repairMask);
+        return (
+            (rng & kindMask) >> 216,
+            (rng & speedMask) >> 162,
+            (rng & fightMask) >> 108,
+            (rng & recoveryMask) >> 54,
+            rng & repairMask
+        );
     }
 
     /// @notice Assuming the given player has rolled or rerolled for entropy and the current block is before
@@ -89,7 +103,8 @@ contract DegenTrailNFT is ERC721, ERC721Enumerable, PlayerBandit {
         _checkPlayerDeadline(player);
         _waitForTickForPlayer(player);
         bytes32 entropy = blockhash(LastRollForPlayer[player]);
-        (uint256 kindRaw, uint256 speedRaw, uint256 fightRaw, uint256 repairRaw, uint256 recoveryRaw) = generateStats(player, entropy);
+        (uint256 kindRaw, uint256 speedRaw, uint256 fightRaw, uint256 repairRaw, uint256 recoveryRaw) =
+            generateStats(player, entropy);
         return _prepareStats(kindRaw, speedRaw, fightRaw, repairRaw, recoveryRaw);
     }
 
@@ -98,8 +113,8 @@ contract DegenTrailNFT is ERC721, ERC721Enumerable, PlayerBandit {
         bytes32 entropy = _entropyForPlayer(msg.sender);
         uint256 tokenID = totalSupply() + 1;
         _mint(msg.sender, tokenID);
-        (kind , speed, fight, repair, recovery) = generateStats(msg.sender, entropy);
-        (kind , speed, fight, repair, recovery) = _prepareStats(kind, speed, fight, repair, recovery);
+        (kind, speed, fight, repair, recovery) = generateStats(msg.sender, entropy);
+        (kind, speed, fight, repair, recovery) = _prepareStats(kind, speed, fight, repair, recovery);
         stats[tokenID] = DegenTrailStats(kind, speed, fight, repair, recovery);
     }
 }

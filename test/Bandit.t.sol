@@ -39,7 +39,6 @@ contract MockPlayerBandit is PlayerBandit {
     function resolveForPlayer() public returns (bytes32) {
         return _entropyForPlayer(msg.sender);
     }
-
 }
 
 contract MockNFTBandit is NFTBandit {
@@ -51,7 +50,6 @@ contract MockNFTBandit is NFTBandit {
         return _entropyForNFT(tokenAddress, tokenID);
     }
 }
-
 
 contract PlayerBanditTest is Test {
     MockERC20 public feeToken;
