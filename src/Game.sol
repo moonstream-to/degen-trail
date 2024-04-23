@@ -3,14 +3,12 @@ pragma solidity ^0.8.13;
 
 import {ERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
-import {Bandit} from "./Bandit.sol";
-
 /// @title Degen Trail game contract
 /// @author Moonstream Engineering (engineering@moonstream.to)
 ///
 /// @notice This is the game contract for The Degen Trail, a fully on-chain degenerate homage to The Oregon
 /// Trail.
-contract DegenTrail is Bandit, ERC20 {
+contract DegenTrail is ERC20 {
     uint256 private constant u8mask = 0xFF;
     uint256 private constant u7mask = 0x7F;
 
@@ -33,11 +31,7 @@ contract DegenTrail is Bandit, ERC20 {
         [0, 43, 43, 48, 128, 128, 128]
     ];
 
-    /// @param blocksToAct Number of blocks that a player has to decide whether to accept their fate or re-roll. This parameter applies to every such decision point.
-    /// @param rollFee Fee for first roll on any action.
-    /// @param rerollFee Fee for re-roll on any action, assuming player doesn't want to accept their fate.
-    constructor(uint256 blocksToAct, uint256 rollFee, uint256 rerollFee)
-        Bandit(blocksToAct, address(this), rollFee, rerollFee)
+    constructor()
         ERC20("Supply", "SUPPLY")
     {
         // Mint initial SUPPLY supply to the deployer of this contract.

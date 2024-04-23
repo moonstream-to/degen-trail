@@ -18,7 +18,7 @@ contract DegenTrailTest is Test {
     function setUp() public {
         deploymentBlock = block.number;
         vm.startPrank(deployer);
-        game = new DegenTrail(blockDeadline, rollFee, rerollFee);
+        game = new DegenTrail();
         vm.stopPrank();
     }
 
