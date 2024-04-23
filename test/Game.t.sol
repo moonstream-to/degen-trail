@@ -63,6 +63,8 @@ contract DegenTrailTest is Test {
         assertEq(game.environment(361), 5);
     }
 
+    // This test checks the state of the hexes in column 0 of the game board at game start.
+    // These hexes have environment 0 (forest).
     function test_hex_state_in_column_0() public view {
         uint256[2][] memory indices = new uint256[2][](100);
         for (uint256 j = 0; j < 100; j++) {
