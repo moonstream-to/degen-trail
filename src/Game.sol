@@ -50,7 +50,7 @@ contract DegenTrail is ERC20 {
     }
 
     /// @notice The SUPPLY ERC20 token has 0 decimal places.
-    function decimals() public view override returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return 0;
     }
 
