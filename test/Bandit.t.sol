@@ -74,7 +74,7 @@ contract BanditTest is Test {
      * - rollForPlayer
      * - _entropyForPlayer
      */
-    function testResolveForPlayerFailsOnSameBlockAsRoll() public {
+    function test_resolve_for_player_fails_on_same_block_as_roll() public {
         vm.startPrank(player1);
         feeToken.mint(player1, 10);
         feeToken.approve(address(bandit), 10);
@@ -91,7 +91,7 @@ contract BanditTest is Test {
      * - rollForPlayer
      * - _entropyForPlayer
      */
-    function testResolveForPlayer() public {
+    function test_resolve_for_player() public {
         vm.startPrank(player1);
         feeToken.mint(player1, 10);
         feeToken.approve(address(bandit), 10);
@@ -112,7 +112,7 @@ contract BanditTest is Test {
      * - rollForPlayer
      * - _entropyForPlayer
      */
-    function testResolveForPlayerFailsAfterBlockDeadline() public {
+    function test_resolve_for_player_fails_after_block_deadline() public {
         vm.startPrank(player1);
         feeToken.mint(player1, 10);
         feeToken.approve(address(bandit), 10);
@@ -130,7 +130,7 @@ contract BanditTest is Test {
      * - rollForNFT
      * - _entropyForNFT
      */
-    function testResolveForNFTFailsOnSameBlockAsRoll() public {
+    function test_resolve_for_nft_fails_on_same_block_as_roll() public {
         vm.startPrank(player1);
         uint256 tokenID = 1;
         nfts.mint(player1, tokenID);
@@ -149,7 +149,7 @@ contract BanditTest is Test {
      * - rollForNFT
      * - _entropyForNFT
      */
-    function testResolveForNFT() public {
+    function test_resolve_for_nft() public {
         vm.startPrank(player1);
         uint256 tokenID = 2;
         nfts.mint(player1, tokenID);
@@ -172,7 +172,7 @@ contract BanditTest is Test {
      * - rollForNFT
      * - _entropyForNFT
      */
-    function testResolveForNFTFailsAfterBlockDeadline() public {
+    function test_resolve_for_nft_fails_after_block_deadline() public {
         vm.startPrank(player1);
         uint256 tokenID = 3;
         nfts.mint(player1, tokenID);
@@ -192,7 +192,7 @@ contract BanditTest is Test {
      * - rollForPlayer
      * - rerollForPlayer
      */
-    function testRerollForPlayer() public {
+    function test_reroll_for_player() public {
         vm.startPrank(player1);
         feeToken.mint(player1, rollFee + rerollFee);
         feeToken.approve(address(bandit), rollFee + rerollFee);
@@ -210,7 +210,7 @@ contract BanditTest is Test {
      * - rollForPlayer
      * - rerollForPlayer
      */
-    function testRerollForPlayerFailsAfterBlockDeadline() public {
+    function test_reroll_for_player_fails_after_block_deadline() public {
         vm.startPrank(player1);
         feeToken.mint(player1, rollFee + rerollFee);
         feeToken.approve(address(bandit), rollFee + rerollFee);
@@ -228,7 +228,7 @@ contract BanditTest is Test {
      * - rollForNFT
      * - rerollForNFT
      */
-    function testRerollForNFT() public {
+    function test_reroll_for_nft() public {
         vm.startPrank(player1);
         uint256 tokenID = 4;
         nfts.mint(player1, tokenID);
@@ -248,7 +248,7 @@ contract BanditTest is Test {
      * - rollForNFT
      * - rerollForNFT
      */
-    function testRerollForNFTFailsAfterBlockDeadline() public {
+    function test_reroll_for_nft_fails_after_block_deadline() public {
         vm.startPrank(player1);
         uint256 tokenID = 5;
         nfts.mint(player1, tokenID);
