@@ -40,6 +40,10 @@ contract DegenTrail is Bandit, ERC20 {
         Bandit(blocksToAct, address(this), rollFee, rerollFee)
         ERC20("Supply", "SUPPLY")
     {
+        // Mint initial SUPPLY supply to the deployer of this contract.
+        _mint(msg.sender, 1000000000);
+
+        // Reveal the first column of the game board.
         uint256 prevBlockNumber = 0;
         if (block.number > 0) {
             prevBlockNumber = block.number - 1;
@@ -49,6 +53,11 @@ contract DegenTrail is Bandit, ERC20 {
         for (uint256 j = 0; j < 100; j++) {
             _explore(0, 2 * j, startingEntropy + (31 * j));
         }
+    }
+
+    /// @notice The SUPPLY ERC20 token has 0 decimal places.
+    function decimals() public view override returns (uint8) {
+        return 0;
     }
 
     /// @notice Internal method that explores a hex and sets its state.
