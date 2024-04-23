@@ -44,8 +44,8 @@ contract DegenTrail is Bandit, ERC20 {
         if (block.number > 0) {
             prevBlockNumber = block.number - 1;
         }
-        // Zero out the leading 12 bits of the block hash, to prevent overflows when adding 31 * j.
-        uint256 startingEntropy = uint256(blockhash(prevBlockNumber)) >> 12 << 12;
+        // Zero out the leading bit of the block hash, to prevent overflows when adding 31 * j.
+        uint256 startingEntropy = uint256(blockhash(prevBlockNumber)) << 1 >> 1;
         for (uint256 j = 0; j < 100; j++) {
             _explore(0, 2 * j, startingEntropy + (31 * j));
         }
