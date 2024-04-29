@@ -1,179 +1,147 @@
-require("@nomicfoundation/hardhat-toolbox");
-require("dotenv").config();
-require("hardhat-deploy");
-require("hardhat-contract-sizer");
-require("@nomiclabs/hardhat-solhint");
-require("@nomicfoundation/hardhat-chai-matchers");
-require("hardhat-interface-generator");
+import * as dotenv from "dotenv";
+dotenv.config();
+import { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-chai-matchers";
+import "@typechain/hardhat";
+import "hardhat-gas-reporter";
+import "solidity-coverage";
+import "@nomicfoundation/hardhat-verify";
+import "hardhat-deploy";
+import "hardhat-deploy-ethers";
 
-const COMPILER_SETTINGS = {
-    optimizer: {
+// If not set, it uses ours Alchemy's default API key.
+// You can get your own at https://dashboard.alchemyapi.io
+const providerApiKey = process.env.ALCHEMY_API_KEY || "oKxs-03sij-U_N0iOlrSsZFr29-IqbuF";
+// If not set, it uses the hardhat account 0 private key.
+const deployerPrivateKey =
+  process.env.DEPLOYER_PRIVATE_KEY ?? "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+// If not set, it uses ours Etherscan default API key.
+const etherscanApiKey = process.env.ETHERSCAN_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
+const PRIVATE_KEY = process.env.PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+
+const config: HardhatUserConfig = {
+  solidity: {
+    version: "0.8.20",
+    settings: {
+      optimizer: {
         enabled: true,
+        // https://docs.soliditylang.org/en/latest/using-the-compiler.html#optimizer-options
         runs: 200,
-    }
-}
-
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const FACTORY_DEPLOYER_PRIVATE_KEY = process.env.FACTORY_DEPLOYER_PRIVATE_KEY;
-
-const FORKING_BLOCK_NUMBER = parseInt(process.env.FORKING_BLOCK_NUMBER) || 0;
-const REPORT_GAS = process.env.REPORT_GAS || false;
-
-const MUMBAI_RPC_URL = process.env.MUMBAI_RPC_URL;
-const GOERLI_RPC_URL = process.env.GOERLI_RPC_URL;
-const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
-const FUJI_RPC_URL = process.env.FUJI_RPC_URL;
-
-const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL;
-const ETHEREUM_RPC_URL = process.env.ETHEREUM_RPC_URL;
-const AVALANCHE_RPC_URL = process.env.AVALANCHE_RPC_URL;
-const OPTIMISM_SEPOLIA_RPC_URL = process.env.OPTIMISM_SEPOLIA_RPC_URL;
-
-const OPTIMISM_SEPOLIA_DEPLOYMENT_SETTINGS = {
-    url: OPTIMISM_SEPOLIA_RPC_URL,
-    accounts: PRIVATE_KEY && FACTORY_DEPLOYER_PRIVATE_KEY ? [PRIVATE_KEY, FACTORY_DEPLOYER_PRIVATE_KEY] : [],
-    chainId: 11155420
-};
-
-const GOERLI_DEPLOYMENT_SETTINGS = {
-    url: GOERLI_RPC_URL,
-    accounts: PRIVATE_KEY && FACTORY_DEPLOYER_PRIVATE_KEY ? [PRIVATE_KEY, FACTORY_DEPLOYER_PRIVATE_KEY] : [],
-    chainId: 5
-};
-
-const MUMBAI_DEPLOYMENT_SETTINGS = {
-    url: MUMBAI_RPC_URL,
-    accounts: PRIVATE_KEY && FACTORY_DEPLOYER_PRIVATE_KEY ? [PRIVATE_KEY, FACTORY_DEPLOYER_PRIVATE_KEY] : [],
-    chainId: 80001,
-}
-
-const SEPOLIA_DEPLOYMENT_SETTINGS = {
-    url: SEPOLIA_RPC_URL,
-    accounts: PRIVATE_KEY && FACTORY_DEPLOYER_PRIVATE_KEY ? [PRIVATE_KEY, FACTORY_DEPLOYER_PRIVATE_KEY] : [],
-    chainId: 11155111,
-}
-
-const FUJI_DEPLOYMENT_SETTINGS = {
-    url: FUJI_RPC_URL,
-    accounts: PRIVATE_KEY && FACTORY_DEPLOYER_PRIVATE_KEY ? [PRIVATE_KEY, FACTORY_DEPLOYER_PRIVATE_KEY] : [],
-    chainId: 43113
-};
-
-const POLYGON_DEPLOYMENT_SETTINGS = {
-    url: POLYGON_RPC_URL,
-    accounts: PRIVATE_KEY && FACTORY_DEPLOYER_PRIVATE_KEY ? [PRIVATE_KEY, FACTORY_DEPLOYER_PRIVATE_KEY] : [],
-    chainId: 137
-};
-
-const ETHEREUM_DEPLOYMENT_SETTINGS = {
-    url: ETHEREUM_RPC_URL,
-    accounts: PRIVATE_KEY && FACTORY_DEPLOYER_PRIVATE_KEY ? [PRIVATE_KEY, FACTORY_DEPLOYER_PRIVATE_KEY] : [],
-    chainId: 1
-};
-
-const AVALANCHE_DEPLOYMENT_SETTINGS = {
-    url: AVALANCHE_RPC_URL,
-    accounts: PRIVATE_KEY && FACTORY_DEPLOYER_PRIVATE_KEY ? [PRIVATE_KEY, FACTORY_DEPLOYER_PRIVATE_KEY] : [],
-    chainId: 43114
-};
-
-const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
-const AVALANCHE_API_KEY = process.env.AVALANCHE_API_KEY;
-const OPTIMISM_ETHERSCAN_API_KEY = process.env.OPTIMISM_ETHERSCAN_API_KEY;
-
-/** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
-    solidity: {
-        compilers: [
-            {
-                version: "0.8.20",
-                settings: COMPILER_SETTINGS,
-            },
-        ],
+      },
     },
-    networks: {
-        hardhat: {
-            chainId: 31337,
-            accounts: [
-                {
-                    balance: "100000000000000000000",
-                    privateKey: PRIVATE_KEY
-                }
-            ]
-            // uncomment when forking is required
-            // forking: {
-            //     url: GOERLI_RPC_URL,
-            //     accounts: PRIVATE_KEY && FACTORY_DEPLOYER_PRIVATE_KEY ? [PRIVATE_KEY, FACTORY_DEPLOYER_PRIVATE_KEY] : [],
-            //     blockNumber: FORKING_BLOCK_NUMBER
-            // }
-        },
-        localhost: {
-            chainId: 31337,
-        },
-        mumbai: MUMBAI_DEPLOYMENT_SETTINGS,
-        goerli: GOERLI_DEPLOYMENT_SETTINGS,
-        sepolia: SEPOLIA_DEPLOYMENT_SETTINGS,
-        polygon: POLYGON_DEPLOYMENT_SETTINGS,
-        ethereum: ETHEREUM_DEPLOYMENT_SETTINGS,
-        avalanche: AVALANCHE_DEPLOYMENT_SETTINGS,
-        fuji: FUJI_DEPLOYMENT_SETTINGS,
-        opsepolia: OPTIMISM_SEPOLIA_DEPLOYMENT_SETTINGS
+  },
+  paths: {
+    sources: "./src"
+  },
+  defaultNetwork: "localhost",
+  namedAccounts: {
+    deployer: {
+      // By default, it will take the first Hardhat account as the deployer
+      default: 0,
     },
-    defaultNetwork: "hardhat",
-    etherscan: {
-        apiKey: {
-            polygonMumbai: POLYGONSCAN_API_KEY,
-            goerli: ETHERSCAN_API_KEY,
-            sepolia: ETHERSCAN_API_KEY,
-            polygon: POLYGONSCAN_API_KEY,
-            mainnet: ETHERSCAN_API_KEY,
-            avalanche: AVALANCHE_API_KEY,
-            avalancheFujiTestnet: AVALANCHE_API_KEY,
-            opseolia: OPTIMISM_ETHERSCAN_API_KEY
-        },
-    },
-    gasReporter: {
-        enabled: REPORT_GAS,
-        currency: "USD",
-        outputFile: "gas-report.txt",
-        noColors: true,
-    },
-    contractSizer: {
-        runOnCompile: false,
-    },
-    paths: {
-        sources: "./src",
-        tests: "./test",
-        cache: "./build/cache",
-        artifacts: "./build/artifacts",
-    },
-    namedAccounts: {
-        deployer: {
-            default: 0,
-            31337: 0,
-            80001: 0,
-            5: 0,
-            11155111: 0,
-            137: 0,
-            1: 0,
-            43114: 0,
-            43113: 0,
-            11155420: 0
-        },
-        factoryDeployer: {
-            31337: 1,
-            80001: 1,
-            5: 1,
-            11155111: 1,
-            137: 1,
-            1: 1,
-            43114: 1,
-            43113: 1,
-            11155420: 1
+  },
+  networks: {
+    // View the networks that are pre-configured.
+    // If the network you are looking for is not here you can add new network settings
+    hardhat: {
+      forking: {
+        url: `https://eth-mainnet.alchemyapi.io/v2/${providerApiKey}`,
+        enabled: process.env.MAINNET_FORKING_ENABLED === "true",
+      },
+      accounts: [
+        {
+            balance: "100000000000000000000",
+            privateKey: PRIVATE_KEY
         }
+    ]      
     },
-    mocha: {
-        timeout: 300000, // 300 seconds max for running tests
+    mainnet: {
+      url: `https://eth-mainnet.alchemyapi.io/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
     },
+    sepolia: {
+      url: `https://eth-sepolia.g.alchemy.com/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
+    },
+    arbitrum: {
+      url: `https://arb-mainnet.g.alchemy.com/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
+    },
+    arbitrumSepolia: {
+      url: `https://arb-sepolia.g.alchemy.com/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
+    },
+    optimism: {
+      url: `https://opt-mainnet.g.alchemy.com/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
+    },
+    optimismSepolia: {
+      url: `https://opt-sepolia.g.alchemy.com/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
+    },
+    polygon: {
+      url: `https://polygon-mainnet.g.alchemy.com/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
+    },
+    polygonMumbai: {
+      url: `https://polygon-mumbai.g.alchemy.com/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
+    },
+    polygonZkEvm: {
+      url: `https://polygonzkevm-mainnet.g.alchemy.com/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
+    },
+    polygonZkEvmTestnet: {
+      url: `https://polygonzkevm-testnet.g.alchemy.com/v2/${providerApiKey}`,
+      accounts: [deployerPrivateKey],
+    },
+    gnosis: {
+      url: "https://rpc.gnosischain.com",
+      accounts: [deployerPrivateKey],
+    },
+    chiado: {
+      url: "https://rpc.chiadochain.net",
+      accounts: [deployerPrivateKey],
+    },
+    base: {
+      url: "https://mainnet.base.org",
+      accounts: [deployerPrivateKey],
+    },
+    baseSepolia: {
+      url: "https://sepolia.base.org",
+      accounts: [deployerPrivateKey],
+    },
+    scrollSepolia: {
+      url: "https://sepolia-rpc.scroll.io",
+      accounts: [deployerPrivateKey],
+    },
+    scroll: {
+      url: "https://rpc.scroll.io",
+      accounts: [deployerPrivateKey],
+    },
+    pgn: {
+      url: "https://rpc.publicgoods.network",
+      accounts: [deployerPrivateKey],
+    },
+    pgnTestnet: {
+      url: "https://sepolia.publicgoods.network",
+      accounts: [deployerPrivateKey],
+    },
+  },
+  // configuration for harhdat-verify plugin
+  etherscan: {
+    apiKey: `${etherscanApiKey}`,
+  },
+  // configuration for etherscan-verify from hardhat-deploy plugin
+  verify: {
+    etherscan: {
+      apiKey: `${etherscanApiKey}`,
+    },
+  },
+  sourcify: {
+    enabled: false,
+  },
 };
+
+export default config;

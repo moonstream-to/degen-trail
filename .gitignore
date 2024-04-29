@@ -266,3 +266,4 @@ gas-report.txt
 contracts/test/fuzzing/crytic-export
 deployments
 typechain-types
+bin/

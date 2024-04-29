@@ -32,7 +32,9 @@ contract MockERC721 is ERC721 {
 }
 
 contract MockBandit is Bandit {
-    constructor(uint256 blocksToAct, address feeTokenAddress, uint256 rollFee, uint256 rerollFee) Bandit(blocksToAct, feeTokenAddress, rollFee, rerollFee) {}
+    constructor(uint256 blocksToAct, address feeTokenAddress, uint256 rollFee, uint256 rerollFee)
+        Bandit(blocksToAct, feeTokenAddress, rollFee, rerollFee)
+    {}
 
     function resolveForPlayer() public returns (uint256) {
         return _entropyForPlayer(msg.sender);

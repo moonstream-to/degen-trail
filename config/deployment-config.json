@@ -12,10 +12,10 @@
               "name": "Fee Token",
               "symbol": "FEE"
         },
-        "Bandit": {
-            "blocksToAct": "1",
-            "rollFee": "1",
-            "rerollFee": "1"
+        "DegenTrail": {
+            "blocksToAct": "10",
+            "rollFee": "10",
+            "rerollFee": "5"
         }
     },
     "opsepolia": {
@@ -31,13 +31,10 @@
             "name": "Fee Token",
             "symbol": "FEE"
       },
-      "Bandit": {
-        "blocksToAct": "1",
-        "rollFee": "1",
-        "rerollFee": "1"
+      "DegenTrail": {
+        "blocksToAct": "10",
+        "rollFee": "10",
+        "rerollFee": "5"
       }
-
-
     }
-
 }
