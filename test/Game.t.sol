@@ -12,9 +12,19 @@ contract DegenTrailTest is Test {
     uint256 rerollFee = 5;
     uint256 deploymentBlock;
 
+    uint256 deployerPrivateKey = 0x42;
+    address deployer = vm.addr(deployerPrivateKey);
+
     function setUp() public {
         deploymentBlock = block.number;
-        game = new DegenTrail(blockDeadline, rollFee, rerollFee);
+        vm.startPrank(deployer);
+        game = new DegenTrail();
+        vm.stopPrank();
+    }
+
+    function test_supply_to_deployer() public view {
+        assertGt(game.totalSupply(), 0);
+        assertEq(game.balanceOf(deployer), game.totalSupply());
     }
 
     function test_hexp() public view {

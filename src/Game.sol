@@ -3,14 +3,14 @@ pragma solidity ^0.8.13;
 
 import {ERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
-import {Bandit} from "./Bandit.sol";
-
 /// @title Degen Trail game contract
 /// @author Moonstream Engineering (engineering@moonstream.to)
 ///
 /// @notice This is the game contract for The Degen Trail, a fully on-chain degenerate homage to The Oregon
 /// Trail.
-contract DegenTrail is Bandit, ERC20 {
+// TODO(zomglings): Jackpot mechanic, with a corresponding tax on all burns. Might want to turn up the decimals
+// to mitigate the rounding effects integer division when imposing the tax.
+contract DegenTrail is ERC20 {
     uint256 private constant u8mask = 0xFF;
     uint256 private constant u7mask = 0x7F;
 
@@ -33,13 +33,11 @@ contract DegenTrail is Bandit, ERC20 {
         [0, 43, 43, 48, 128, 128, 128]
     ];
 
-    /// @param blocksToAct Number of blocks that a player has to decide whether to accept their fate or re-roll. This parameter applies to every such decision point.
-    /// @param rollFee Fee for first roll on any action.
-    /// @param rerollFee Fee for re-roll on any action, assuming player doesn't want to accept their fate.
-    constructor(uint256 blocksToAct, uint256 rollFee, uint256 rerollFee)
-        Bandit(blocksToAct, address(this), rollFee, rerollFee)
-        ERC20("Supply", "SUPPLY")
-    {
+    constructor() ERC20("Supply", "SUPPLY") {
+        // Mint initial SUPPLY supply to the deployer of this contract.
+        _mint(msg.sender, 1000000000);
+
+        // Reveal the first column of the game board.
         uint256 prevBlockNumber = 0;
         if (block.number > 0) {
             prevBlockNumber = block.number - 1;
@@ -49,6 +47,21 @@ contract DegenTrail is Bandit, ERC20 {
         for (uint256 j = 0; j < 100; j++) {
             _explore(0, 2 * j, startingEntropy + (31 * j));
         }
+    }
+
+    /// @notice The SUPPLY ERC20 token has 0 decimal places.
+    function decimals() public pure override returns (uint8) {
+        return 0;
+    }
+
+    /// @notice Burns the given amount from the SUPPLY held by msg.sender.
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+
+    /// @notice Burns all the SUPPLY held by msg.sender.
+    function incinerate() external {
+        _burn(msg.sender, balanceOf(msg.sender));
     }
 
     /// @notice Internal method that explores a hex and sets its state.
@@ -79,7 +92,7 @@ contract DegenTrail is Bandit, ERC20 {
         }
     }
 
-    /// @notice Describes the environment of a hex with the given j-coordinate.
+    /// @notice Describes the environment of a hex with the given i-coordinate.
     function environment(uint256 i) public pure returns (uint256) {
         return 3 * (i >> 5) % 7;
     }
