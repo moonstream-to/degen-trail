@@ -70,81 +70,89 @@ interface IDegenTrail {
 // solface version: 0.2.3
 // Interface ID: 45a510c1
 interface IJackpotJunction {
-	// structs
+    // structs
 
-	// events
-	event ApprovalForAll(address account, address operator, bool approved);
-	event Award(address player, uint256 outcome, uint256 value);
-	event Roll(address player);
-	event TierUnlocked(uint256 itemType, uint256 terrainType, uint256 tier, uint256 poolID);
-	event TransferBatch(address operator, address from, address to, uint256[] ids, uint256[] values);
-	event TransferSingle(address operator, address from, address to, uint256 id, uint256 value);
-	event URI(string value, uint256 id);
+    // events
+    event ApprovalForAll(address account, address operator, bool approved);
+    event Award(address player, uint256 outcome, uint256 value);
+    event Roll(address player);
+    event TierUnlocked(uint256 itemType, uint256 terrainType, uint256 tier, uint256 poolID);
+    event TransferBatch(address operator, address from, address to, uint256[] ids, uint256[] values);
+    event TransferSingle(address operator, address from, address to, uint256 id, uint256 value);
+    event URI(string value, uint256 id);
 
-	// functions
-	// Selector: be59cce3
-	function BlocksToAct() external view returns (uint256);
-	// Selector: b870fe80
-	function CostToReroll() external view returns (uint256);
-	// Selector: 50b8aa92
-	function CostToRoll() external view returns (uint256);
-	// Selector: dd88fa7f
-	function CurrentTier(uint256 , uint256 ) external view returns (uint256);
-	// Selector: 18ce0a4b
-	function ImprovedOutcomesCumulativeMass(uint256 ) external view returns (uint256);
-	// Selector: 9a0facc2
-	function LastRollBlock(address ) external view returns (uint256);
-	// Selector: 418145cf
-	function UnmodifiedOutcomesCumulativeMass(uint256 ) external view returns (uint256);
-	// Selector: 2852b71c
-	function accept() external  returns (uint256, uint256, uint256);
-	// Selector: 7d2a9f54
-	function acceptWithCards(uint256 wagonCover, uint256 wagonBody, uint256 wheels, uint256 beastTrain) external  returns (uint256, uint256, uint256);
-	// Selector: 00fdd58e
-	function balanceOf(address account, uint256 id) external view returns (uint256);
-	// Selector: 4e1273f4
-	function balanceOfBatch(address[] memory accounts, uint256[] memory ids) external view returns (uint256[] memory);
-	// Selector: b390c0ab
-	function burn(uint256 poolID, uint256 amount) external ;
-	// Selector: 83ca4b6f
-	function burnBatch(uint256[] memory poolIDs, uint256[] memory amounts) external ;
-	// Selector: f3917bd2
-	function craft(uint256 poolID) external  returns (uint256 newPoolID);
-	// Selector: 3a134f78
-	function genera(uint256 poolID) external pure returns (uint256 itemType, uint256 terrainType, uint256 tier);
-	// Selector: e985e9c5
-	function isApprovedForAll(address account, address operator) external view returns (bool);
-	// Selector: 3a259e6a
-	function outcome(address degenerate, bool bonus) external view returns (uint256, uint256, uint256);
-	// Selector: cd5e3c5d
-	function roll() external ;
-	// Selector: 2eb2c2d6
-	function safeBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory values, bytes memory data) external ;
-	// Selector: f242432a
-	function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes memory data) external ;
-	// Selector: ecefbad8
-	function sampleImprovedOutcomesCumulativeMass(uint256 entropy) external view returns (uint256);
-	// Selector: 6c08995d
-	function sampleUnmodifiedOutcomeCumulativeMass(uint256 entropy) external view returns (uint256);
-	// Selector: a22cb465
-	function setApprovalForAll(address operator, bool approved) external ;
-	// Selector: 01ffc9a7
-	function supportsInterface(bytes4 interfaceId) external view returns (bool);
-	// Selector: 0e89341c
-	function uri(uint256 ) external view returns (string memory);
+    // functions
+    // Selector: be59cce3
+    function BlocksToAct() external view returns (uint256);
+    // Selector: b870fe80
+    function CostToReroll() external view returns (uint256);
+    // Selector: 50b8aa92
+    function CostToRoll() external view returns (uint256);
+    // Selector: dd88fa7f
+    function CurrentTier(uint256, uint256) external view returns (uint256);
+    // Selector: 18ce0a4b
+    function ImprovedOutcomesCumulativeMass(uint256) external view returns (uint256);
+    // Selector: 9a0facc2
+    function LastRollBlock(address) external view returns (uint256);
+    // Selector: 418145cf
+    function UnmodifiedOutcomesCumulativeMass(uint256) external view returns (uint256);
+    // Selector: 2852b71c
+    function accept() external returns (uint256, uint256, uint256);
+    // Selector: 7d2a9f54
+    function acceptWithCards(uint256 wagonCover, uint256 wagonBody, uint256 wheels, uint256 beastTrain)
+        external
+        returns (uint256, uint256, uint256);
+    // Selector: 00fdd58e
+    function balanceOf(address account, uint256 id) external view returns (uint256);
+    // Selector: 4e1273f4
+    function balanceOfBatch(address[] memory accounts, uint256[] memory ids) external view returns (uint256[] memory);
+    // Selector: b390c0ab
+    function burn(uint256 poolID, uint256 amount) external;
+    // Selector: 83ca4b6f
+    function burnBatch(uint256[] memory poolIDs, uint256[] memory amounts) external;
+    // Selector: f3917bd2
+    function craft(uint256 poolID) external returns (uint256 newPoolID);
+    // Selector: 3a134f78
+    function genera(uint256 poolID) external pure returns (uint256 itemType, uint256 terrainType, uint256 tier);
+    // Selector: e985e9c5
+    function isApprovedForAll(address account, address operator) external view returns (bool);
+    // Selector: 3a259e6a
+    function outcome(address degenerate, bool bonus) external view returns (uint256, uint256, uint256);
+    // Selector: cd5e3c5d
+    function roll() external;
+    // Selector: 2eb2c2d6
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values,
+        bytes memory data
+    ) external;
+    // Selector: f242432a
+    function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes memory data) external;
+    // Selector: ecefbad8
+    function sampleImprovedOutcomesCumulativeMass(uint256 entropy) external view returns (uint256);
+    // Selector: 6c08995d
+    function sampleUnmodifiedOutcomeCumulativeMass(uint256 entropy) external view returns (uint256);
+    // Selector: a22cb465
+    function setApprovalForAll(address operator, bool approved) external;
+    // Selector: 01ffc9a7
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+    // Selector: 0e89341c
+    function uri(uint256) external view returns (string memory);
 
-	// errors
-	error DeadlineExceeded();
-	error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId);
-	error ERC1155InvalidApprover(address approver);
-	error ERC1155InvalidArrayLength(uint256 idsLength, uint256 valuesLength);
-	error ERC1155InvalidOperator(address operator);
-	error ERC1155InvalidReceiver(address receiver);
-	error ERC1155InvalidSender(address sender);
-	error ERC1155MissingApprovalForAll(address operator, address owner);
-	error InsufficientItems(uint256 poolID);
-	error InsufficientValue();
-	error InvalidItem(uint256 poolID);
-	error ReentrancyGuardReentrantCall();
-	error WaitForTick();
+    // errors
+    error DeadlineExceeded();
+    error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId);
+    error ERC1155InvalidApprover(address approver);
+    error ERC1155InvalidArrayLength(uint256 idsLength, uint256 valuesLength);
+    error ERC1155InvalidOperator(address operator);
+    error ERC1155InvalidReceiver(address receiver);
+    error ERC1155InvalidSender(address sender);
+    error ERC1155MissingApprovalForAll(address operator, address owner);
+    error InsufficientItems(uint256 poolID);
+    error InsufficientValue();
+    error InvalidItem(uint256 poolID);
+    error ReentrancyGuardReentrantCall();
+    error WaitForTick();
 }
