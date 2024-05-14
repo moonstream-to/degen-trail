@@ -253,4 +253,8 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
             emit TierUnlocked(itemType, terrainType, tier, newPoolID);
         }
     }
+
+    function burn(uint256 poolID, uint256 amount) external {
+        _burn(msg.sender, poolID, amount);
+    }
 }
