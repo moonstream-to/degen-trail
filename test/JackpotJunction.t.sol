@@ -43,14 +43,14 @@ contract JackpotJunctionTest is Test {
 
         for (uint256 i = 0; i < 4; i++) {
             for (uint256 j = 0; j < 7; j++) {
-                (itemType, terrainType, tier) = game.genera(4*j + i);
+                (itemType, terrainType, tier) = game.genera(4 * j + i);
                 assertEq(itemType, i);
                 assertEq(terrainType, j);
                 assertEq(tier, 0);
             }
         }
 
-        (itemType, terrainType, tier) = game.genera(95*28 + 4*3 + 2);
+        (itemType, terrainType, tier) = game.genera(95 * 28 + 4 * 3 + 2);
         assertEq(itemType, 2);
         assertEq(terrainType, 3);
         assertEq(tier, 95);
@@ -154,7 +154,7 @@ contract JackpotJunctionTest is Test {
         vm.roll(block.number + game.BlocksToAct());
 
         uint256 expectedEntropy = uint256(blockhash(block.number - game.BlocksToAct()));
-        (uint256 entropy, uint256 outcome, uint256 value) = game.outcome(player1, false);
+        (uint256 entropy,,) = game.outcome(player1, false);
         assertEq(entropy, expectedEntropy);
     }
 }
