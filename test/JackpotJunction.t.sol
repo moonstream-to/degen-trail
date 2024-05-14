@@ -55,4 +55,106 @@ contract JackpotJunctionTest is Test {
         assertEq(terrainType, 3);
         assertEq(tier, 95);
     }
+
+    function test_samples() public {
+        // Unmodified
+        // uint256[5] public UnmodifiedOutcomesCumulativeMass = [
+        //     524288,
+        //     524288 + 408934,
+        //     524288 + 408934 + 104857,
+        //     524288 + 408934 + 104857 + 10487,
+        //     524288 + 408934 + 104857 + 10487 + 10
+        // ];
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(0), 0);
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524287), 0);
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288), 1);
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408933), 1);
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934), 2);
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104856), 2);
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857), 3);
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10486), 3);
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10487), 4);
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10487 + 9), 4);
+        // Overflow
+        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10487 + 10), 0);
+
+        // Improved
+        // uint256[5] public ImprovedOutcomesCumulativeMass = [
+        //     469283,
+        //     469283 + 408934,
+        //     469283 + 408934 + 154857,
+        //     469283 + 408934 + 154857 + 15487,
+        //     469283 + 408934 + 154857 + 15487 + 15
+        // ];
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(0), 0);
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469282), 0);
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283), 1);
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408933), 1);
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934), 2);
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154856), 2);
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857), 3);
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15486), 3);
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487), 4);
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487 + 14), 4);
+        // Overflow
+        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487 + 15), 0);
+    }
+
+    function test_roll() public {
+        vm.startPrank(player1);
+
+        vm.deal(player1, costToRoll);
+
+        // Even if the player has enough balance, if they call the roll method without supplying that balance,
+        // the game reverts.
+        vm.expectRevert(JackpotJunction.InsufficientValue.selector);
+        game.roll();
+
+        game.roll{value: costToRoll}();
+        assertEq(player1.balance, 0);
+        assertEq(address(game).balance, costToRoll);
+
+        vm.roll(block.number + 1);
+        vm.deal(player1, costToReroll);
+        game.roll{value: costToReroll}();
+        assertEq(player1.balance, 0);
+        assertEq(address(game).balance, costToRoll + costToReroll);
+    }
+
+    function test_outcome_reverts_before_tick() public {
+        vm.startPrank(player1);
+
+        vm.deal(player1, 1000 * costToRoll);
+
+        game.roll{value: costToRoll}();
+
+        vm.expectRevert(JackpotJunction.WaitForTick.selector);
+        game.outcome(player1, false);
+    }
+
+    function test_outcome_reverts_after_deadline() public {
+        vm.startPrank(player1);
+
+        vm.deal(player1, 1000 * costToRoll);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+        vm.expectRevert(JackpotJunction.DeadlineExceeded.selector);
+        game.outcome(player1, false);
+    }
+
+    function test_outcome() public {
+        vm.startPrank(player1);
+
+        vm.deal(player1, 1000 * costToRoll);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + game.BlocksToAct());
+
+        uint256 expectedEntropy = uint256(blockhash(block.number - game.BlocksToAct()));
+        (uint256 entropy, uint256 outcome, uint256 value) = game.outcome(player1, false);
+        assertEq(entropy, expectedEntropy);
+    }
 }
