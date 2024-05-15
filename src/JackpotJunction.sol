@@ -114,6 +114,10 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         emit Roll(msg.sender);
     }
 
+    function _entropy(address degenerate) internal virtual view returns (uint256) {
+        return uint256(blockhash(LastRollBlock[degenerate]));
+    }
+
     function outcome(address degenerate, bool bonus) public view returns (uint256, uint256, uint256) {
         if (block.number <= LastRollBlock[degenerate]) {
             revert WaitForTick();
@@ -126,7 +130,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         // entropy layout:
         // |- 118 bits -|- 118 bits -|- 20 bits -|
         //    item type  terrain type   outcome
-        uint256 entropy = uint256(blockhash(LastRollBlock[degenerate]));
+        uint256 entropy = _entropy(degenerate);
 
         uint256 _outcome;
         if (!bonus) {

@@ -4,6 +4,20 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/JackpotJunction.sol";
 
+contract JackpotJunctionWithControllableEntropy is JackpotJunction {
+    uint256 public Entropy;
+
+    constructor(uint256 blocksToAct, uint256 costToRoll, uint256 costToReroll) JackpotJunction(blocksToAct, costToRoll, costToReroll) {}
+
+    function setEntropy(uint256 value) public {
+        Entropy = value;
+    }
+
+    function _entropy(address) internal view override returns (uint256) {
+        return Entropy;
+    }
+}
+
 contract JackpotJunctionTest is Test {
     JackpotJunction game;
 
@@ -156,5 +170,62 @@ contract JackpotJunctionTest is Test {
         uint256 expectedEntropy = uint256(blockhash(block.number - game.BlocksToAct()));
         (uint256 entropy,,) = game.outcome(player1, false);
         assertEq(entropy, expectedEntropy);
+    }
+}
+
+contract JackpotJunctionPlayTest is Test {
+    JackpotJunctionWithControllableEntropy game;
+
+    uint256 deployerPrivateKey = 0x42;
+    address deployer = vm.addr(deployerPrivateKey);
+
+    uint256 player1PrivateKey = 0x13371;
+    address player1 = vm.addr(player1PrivateKey);
+
+    uint256 blocksToAct = 10;
+    uint256 costToRoll = 1e18;
+    uint256 costToReroll = 4e17;
+
+    function setUp() public {
+        game = new JackpotJunctionWithControllableEntropy(blocksToAct, costToRoll, costToReroll);
+    }
+
+    function test_nothing_then_item() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        vm.startPrank(player1);
+        vm.deal(player1, 1000*costToRoll);
+        vm.deal(address(game), 1000000 ether);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        uint256 itemType = 1;
+        uint256 terrainType = 2;
+        game.setEntropy((itemType << 138) + (terrainType << 20) + game.UnmodifiedOutcomesCumulativeMass(0));
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 1);
+        assertEq(actualValue, 4*terrainType + itemType);
+
+        assertEq(game.balanceOf(player1, 4*terrainType + itemType), 0);
+
+        (actualEntropy, actualOutcome, actualValue) = game.accept();
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 1);
+        assertEq(actualValue, 4*terrainType + itemType);
+
+        assertEq(game.balanceOf(player1, 4*terrainType + itemType), 1);
     }
 }
