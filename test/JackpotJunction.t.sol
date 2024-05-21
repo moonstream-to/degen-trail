@@ -19,6 +19,14 @@ contract TestableJackpotJunction is JackpotJunction {
 
     function mint(address to, uint256 poolID, uint256 amount) public {
         _mint(to, poolID, amount, "");
+        uint256 itemType;
+        uint256 tier;
+        uint256 terrainType;
+        (itemType, terrainType, tier) = genera(poolID);
+
+        if (CurrentTier[itemType][terrainType] < tier) {
+            CurrentTier[itemType][terrainType] = tier;
+        }
     }
 }
 
@@ -525,10 +533,6 @@ contract JackpotJunctionPlayTest is Test {
     }
 
     function test_bonus_acceptance_fails_with_incorrect_item_types() public {
-        uint256 actualEntropy;
-        uint256 actualOutcome;
-        uint256 actualValue;
-
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
@@ -558,5 +562,130 @@ contract JackpotJunctionPlayTest is Test {
 
         assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
         assertEq(player2.balance, 999*game.CostToRoll() - game.CostToReroll());
+    }
+
+    function test_bonus_is_not_applied_if_cover_is_not_max_tier() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        assertGe(game.UnmodifiedOutcomesCumulativeMass(0) - 1, game.ImprovedOutcomesCumulativeMass(0));
+        game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(0) - 1);
+        game.roll{value: costToReroll}();
+
+
+        vm.roll(block.number + 1);
+        game.mint(player1, 28, 1);
+
+        assertEq(game.CurrentTier(0, 0), 1);
+        assertEq(game.CurrentTier(1, 0), 0);
+        assertEq(game.CurrentTier(2, 0), 0);
+        assertEq(game.CurrentTier(3, 0), 0);
+
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+    }
+
+    function test_bonus_is_not_applied_if_body_is_not_max_tier() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        assertGe(game.UnmodifiedOutcomesCumulativeMass(0) - 1, game.ImprovedOutcomesCumulativeMass(0));
+        game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(0) - 1);
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.mint(player1, 28 + 1, 1);
+
+        assertEq(game.CurrentTier(0, 0), 0);
+        assertEq(game.CurrentTier(1, 0), 1);
+        assertEq(game.CurrentTier(2, 0), 0);
+        assertEq(game.CurrentTier(3, 0), 0);
+
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+    }
+
+    function test_bonus_is_not_applied_if_wheel_is_not_max_tier() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        assertGe(game.UnmodifiedOutcomesCumulativeMass(0) - 1, game.ImprovedOutcomesCumulativeMass(0));
+        game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(0) - 1);
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.mint(player1, 28 + 2, 1);
+
+        assertEq(game.CurrentTier(0, 0), 0);
+        assertEq(game.CurrentTier(1, 0), 0);
+        assertEq(game.CurrentTier(2, 0), 1);
+        assertEq(game.CurrentTier(3, 0), 0);
+
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+    }
+
+    function test_bonus_is_not_applied_if_beast_is_not_max_tier() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        assertGe(game.UnmodifiedOutcomesCumulativeMass(0) - 1, game.ImprovedOutcomesCumulativeMass(0));
+        game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(0) - 1);
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.mint(player1, 28 + 3, 1);
+
+        assertEq(game.CurrentTier(0, 0), 0);
+        assertEq(game.CurrentTier(1, 0), 0);
+        assertEq(game.CurrentTier(2, 0), 0);
+        assertEq(game.CurrentTier(3, 0), 1);
+
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
     }
 }
