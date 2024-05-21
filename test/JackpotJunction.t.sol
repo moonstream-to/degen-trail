@@ -523,4 +523,40 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1));
         assertEq(player2.balance, 999*game.CostToRoll()- game.CostToReroll() + actualValue);
     }
+
+    function test_bonus_acceptance_fails_with_incorrect_item_types() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(game.ImprovedOutcomesCumulativeMass(3));
+
+        vm.expectRevert(abi.encodeWithSelector(JackpotJunction.InvalidItem.selector, 1));
+        game.acceptWithCards(1, 0, 2, 3);
+
+        vm.expectRevert(abi.encodeWithSelector(JackpotJunction.InvalidItem.selector, 2));
+        game.acceptWithCards(0, 2, 1, 3);
+
+        vm.expectRevert(abi.encodeWithSelector(JackpotJunction.InvalidItem.selector, 3));
+        game.acceptWithCards(0, 1, 3, 2);
+
+        vm.expectRevert(abi.encodeWithSelector(JackpotJunction.InvalidItem.selector, 2));
+        game.acceptWithCards(0, 1, 2, 2);
+
+        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+        assertEq(player2.balance, 999*game.CostToRoll() - game.CostToReroll());
+    }
 }
