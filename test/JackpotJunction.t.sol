@@ -815,4 +815,45 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(actualOutcome, 0);
         assertEq(actualValue, 0);
     }
+
+    function test_crafting_tier_0_to_tier_1() public {
+        vm.startPrank(player2);
+        for (uint256 i = 0; i < 4; i++) {
+            for (uint256 j = 0; j < 7; j++) {
+                uint256 inputPoolID = 4 * j + i;
+                uint256 outputPoolID = 28 + inputPoolID;
+                game.mint(player2, inputPoolID, 2);
+                uint256 initialInputBalance = game.balanceOf(player2, inputPoolID);
+                uint256 initialOutputBalance = game.balanceOf(player2, outputPoolID);
+                assertEq(game.CurrentTier(i, j), 0);
+                game.craft(inputPoolID);
+                uint256 terminalInputBalance = game.balanceOf(player2, inputPoolID);
+                uint256 terminalOutputBalance = game.balanceOf(player2, outputPoolID);
+                assertEq(terminalInputBalance, initialInputBalance - 2);
+                assertEq(terminalOutputBalance, initialOutputBalance + 1);
+                assertEq(game.CurrentTier(i, j), 1);
+            }
+        }
+    }
+
+    function test_crafting_tier_92384_to_tier_92385() public {
+        vm.startPrank(player2);
+        for (uint256 i = 0; i < 4; i++) {
+            for (uint256 j = 0; j < 7; j++) {
+                uint256 inputPoolID = 92384 * 28 + 4 * j + i;
+                uint256 outputPoolID = 28 + inputPoolID;
+                game.mint(player2, inputPoolID, 2);
+                uint256 initialInputBalance = game.balanceOf(player2, inputPoolID);
+                uint256 initialOutputBalance = game.balanceOf(player2, outputPoolID);
+                assertEq(game.CurrentTier(i, j), 92384);
+                game.craft(inputPoolID);
+                uint256 terminalInputBalance = game.balanceOf(player2, inputPoolID);
+                uint256 terminalOutputBalance = game.balanceOf(player2, outputPoolID);
+                assertEq(terminalInputBalance, initialInputBalance - 2);
+                assertEq(terminalOutputBalance, initialOutputBalance + 1);
+                assertEq(game.CurrentTier(i, j), 92385);
+            }
+        }
+    }
+
 }
