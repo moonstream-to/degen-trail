@@ -147,6 +147,37 @@ contract JackpotJunctionTest is Test {
         assertEq(address(game).balance, costToRoll + costToReroll);
     }
 
+    function test_reroll_cost_not_applied_after_block_deadline() public {
+        vm.startPrank(player1);
+        vm.deal(player1, 1000*costToRoll);
+        vm.deal(address(game), 1000000 ether);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+
+        vm.expectRevert(JackpotJunction.InsufficientValue.selector);
+        assertLt(costToReroll, costToRoll);
+        game.roll{value: costToReroll}();
+
+        assertEq(player1.balance, 999*costToRoll);
+    }
+
+    function test_reroll_cost_applied_at_block_deadline() public {
+        vm.startPrank(player1);
+        vm.deal(player1, 1000*costToRoll);
+        vm.deal(address(game), 1000000 ether);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + game.BlocksToAct());
+
+        game.roll{value: costToReroll}();
+
+        assertEq(player1.balance, 999*costToRoll - costToReroll);
+    }
+
+
     function test_outcome_reverts_before_tick() public {
         vm.startPrank(player1);
 
