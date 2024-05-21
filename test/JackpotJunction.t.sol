@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/JackpotJunction.sol";
 
-contract JackpotJunctionWithControllableEntropy is JackpotJunction {
+contract TestableJackpotJunction is JackpotJunction {
     uint256 public Entropy;
 
     constructor(uint256 blocksToAct, uint256 costToRoll, uint256 costToReroll) JackpotJunction(blocksToAct, costToRoll, costToReroll) {}
@@ -15,6 +15,10 @@ contract JackpotJunctionWithControllableEntropy is JackpotJunction {
 
     function _entropy(address) internal view override returns (uint256) {
         return Entropy;
+    }
+
+    function mint(address to, uint256 poolID, uint256 amount) public {
+        _mint(to, poolID, amount, "");
     }
 }
 
@@ -174,20 +178,32 @@ contract JackpotJunctionTest is Test {
 }
 
 contract JackpotJunctionPlayTest is Test {
-    JackpotJunctionWithControllableEntropy game;
+    TestableJackpotJunction game;
 
     uint256 deployerPrivateKey = 0x42;
     address deployer = vm.addr(deployerPrivateKey);
 
+    // New player, no items
     uint256 player1PrivateKey = 0x13371;
     address player1 = vm.addr(player1PrivateKey);
+
+    // Player who has high tier items
+    uint256 player2PrivateKey = 0x13372;
+    address player2 = vm.addr(player2PrivateKey);
 
     uint256 blocksToAct = 10;
     uint256 costToRoll = 1e18;
     uint256 costToReroll = 4e17;
 
     function setUp() public {
-        game = new JackpotJunctionWithControllableEntropy(blocksToAct, costToRoll, costToReroll);
+        game = new TestableJackpotJunction(blocksToAct, costToRoll, costToReroll);
+
+        // Mint player2 one of each tier 0 item.
+        for (uint256 i = 0; i < 4; i++) {
+            for (uint256 j = 0; j < 7; j++) {
+                game.mint(player2, 4 * j + i, 1);
+            }
+        }
     }
 
     function test_nothing_then_item() public {
@@ -347,5 +363,164 @@ contract JackpotJunctionPlayTest is Test {
 
         assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1));
         assertEq(player1.balance, 999*game.CostToRoll()- game.CostToReroll() + actualValue);
+    }
+
+    function test_bonus_nothing_then_item() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), 1000000 ether);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        uint256 itemType = 1;
+        uint256 terrainType = 2;
+        game.setEntropy((itemType << 138) + (terrainType << 20) + game.ImprovedOutcomesCumulativeMass(0));
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 1);
+        assertEq(actualValue, 4*terrainType + itemType);
+
+        assertEq(game.balanceOf(player2, 4*terrainType + itemType), 1);
+
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 1);
+        assertEq(actualValue, 4*terrainType + itemType);
+
+        assertEq(game.balanceOf(player2, 4*terrainType + itemType), 2);
+    }
+
+    function test_bonus_nothing_then_small_reward() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(game.ImprovedOutcomesCumulativeMass(1));
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 2);
+        assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
+
+        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 2);
+        assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
+
+        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - (game.CostToRoll() + (game.CostToRoll() >> 1)));
+        assertEq(player2.balance, 1000*game.CostToRoll() + (game.CostToRoll() >> 1) - game.CostToReroll());
+    }
+
+    function test_bonus_nothing_then_medium_reward() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(game.ImprovedOutcomesCumulativeMass(2));
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 3);
+        assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
+
+        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 3);
+        assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
+
+        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6));
+        assertEq(player2.balance, 999*game.CostToRoll()- game.CostToReroll() + actualValue);
+    }
+
+    function test_bonus_nothing_then_large_reward() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(game.ImprovedOutcomesCumulativeMass(3));
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 4);
+        assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
+
+        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 4);
+        assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
+
+        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1));
+        assertEq(player2.balance, 999*game.CostToRoll()- game.CostToReroll() + actualValue);
     }
 }
