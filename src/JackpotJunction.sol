@@ -182,6 +182,8 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     {
         bool bonus = false;
 
+        uint256 terrainType;
+
         uint256 currentItemType;
         uint256 currentTier;
         uint256 currentTerrainType;
@@ -196,6 +198,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         if (CurrentTier[currentItemType][currentTerrainType] == currentTier) {
             bonus = true;
         }
+        terrainType = currentTerrainType;
 
         if (bonus) {
             (currentItemType, currentTerrainType, currentTier) = genera(wagonBody);
@@ -205,7 +208,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
             if (balanceOf(msg.sender, wagonBody) == 0) {
                 revert InsufficientItems(wagonBody);
             }
-            if (CurrentTier[currentItemType][currentTerrainType] != currentTier) {
+            if (CurrentTier[currentItemType][currentTerrainType] != currentTier || currentTerrainType != terrainType) {
                 bonus = false;
             }
         }
@@ -218,7 +221,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
             if (balanceOf(msg.sender, wheels) == 0) {
                 revert InsufficientItems(wheels);
             }
-            if (CurrentTier[currentItemType][currentTerrainType] != currentTier) {
+            if (CurrentTier[currentItemType][currentTerrainType] != currentTier || currentTerrainType != terrainType) {
                 bonus = false;
             }
         }
@@ -231,7 +234,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
             if (balanceOf(msg.sender, beastTrain) == 0) {
                 revert InsufficientItems(beastTrain);
             }
-            if (CurrentTier[currentItemType][currentTerrainType] != currentTier) {
+            if (CurrentTier[currentItemType][currentTerrainType] != currentTier || currentTerrainType != terrainType) {
                 bonus = false;
             }
         }

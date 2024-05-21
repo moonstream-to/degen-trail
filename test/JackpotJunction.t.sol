@@ -688,4 +688,100 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(actualOutcome, 0);
         assertEq(actualValue, 0);
     }
+
+    function test_bonus_is_not_applied_if_cover_of_different_terrain_type() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        assertGe(game.UnmodifiedOutcomesCumulativeMass(0) - 1, game.ImprovedOutcomesCumulativeMass(0));
+        game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(0) - 1);
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(4 + 0, 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+    }
+
+    function test_bonus_is_not_applied_if_body_of_different_terrain_type() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        assertGe(game.UnmodifiedOutcomesCumulativeMass(0) - 1, game.ImprovedOutcomesCumulativeMass(0));
+        game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(0) - 1);
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 4 + 1, 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+    }
+
+    function test_bonus_is_not_applied_if_wheel_of_different_terrain_type() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        assertGe(game.UnmodifiedOutcomesCumulativeMass(0) - 1, game.ImprovedOutcomesCumulativeMass(0));
+        game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(0) - 1);
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 4 + 2, 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+    }
+
+    function test_bonus_is_not_applied_if_beast_of_different_terrain_type() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000*costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        game.roll{value: costToRoll}();
+
+        assertGe(game.UnmodifiedOutcomesCumulativeMass(0) - 1, game.ImprovedOutcomesCumulativeMass(0));
+        game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(0) - 1);
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 4 + 3);
+        assertEq(actualEntropy, game.Entropy());
+        assertEq(actualOutcome, 0);
+        assertEq(actualValue, 0);
+    }
 }
