@@ -118,32 +118,36 @@ contract DegenTrailNFT is ERC721, ERC721Enumerable, PlayerBandit {
         stats[tokenID] = DegenTrailStats(kind, speed, fight, repair, recovery);
     }
 
-    function _metadataName(uint256 tokenID, DegenTrailStats memory stat) internal virtual view returns (string memory) {
+    function _metadataName(uint256 tokenID, DegenTrailStats memory stat)
+        internal
+        view
+        virtual
+        returns (string memory)
+    {
         return string(abi.encodePacked(tokenID));
     }
 
-    function _metadataKind(uint256 kind) internal virtual view returns (string memory) {
+    function _metadataKind(uint256 kind) internal view virtual returns (string memory) {
         return string(abi.encodePacked(kind));
     }
 
     function metadataJSONBytes(uint256 tokenID) public view returns (bytes memory) {
         DegenTrailStats memory stat = stats[tokenID];
-        return
-            abi.encodePacked(
-                '{"name": "',
-                _metadataName(tokenID, stat),
-                '","kind":',
-                _metadataKind(stat.kind),
-                ',"speed":',
-                stat.speed,
-                ',"fight":',
-                stat.fight,
-                ',"repair":',
-                stat.repair,
-                ',"recovery":',
-                stat.recovery,
-                "}"
-            );
+        return abi.encodePacked(
+            '{"name": "',
+            _metadataName(tokenID, stat),
+            '","kind":',
+            _metadataKind(stat.kind),
+            ',"speed":',
+            stat.speed,
+            ',"fight":',
+            stat.fight,
+            ',"repair":',
+            stat.repair,
+            ',"recovery":',
+            stat.recovery,
+            "}"
+        );
     }
 
     function metadataJSON(uint256 tokenID) external view returns (string memory) {

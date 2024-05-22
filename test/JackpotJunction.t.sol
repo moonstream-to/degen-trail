@@ -7,7 +7,9 @@ import "../src/JackpotJunction.sol";
 contract TestableJackpotJunction is JackpotJunction {
     uint256 public Entropy;
 
-    constructor(uint256 blocksToAct, uint256 costToRoll, uint256 costToReroll) JackpotJunction(blocksToAct, costToRoll, costToReroll) {}
+    constructor(uint256 blocksToAct, uint256 costToRoll, uint256 costToReroll)
+        JackpotJunction(blocksToAct, costToRoll, costToReroll)
+    {}
 
     function setEntropy(uint256 value) public {
         Entropy = value;
@@ -128,6 +130,14 @@ contract JackpotJunctionTest is Test {
         assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487 + 15), 0);
     }
 
+    function test_fund_game() public {
+        vm.startPrank(player1);
+
+        vm.deal(player1, 1 ether);
+
+        payable(address(game)).transfer(1 ether);
+    }
+
     function test_roll() public {
         vm.startPrank(player1);
 
@@ -153,7 +163,7 @@ contract JackpotJunctionTest is Test {
 
     function test_reroll_cost_not_applied_after_block_deadline() public {
         vm.startPrank(player1);
-        vm.deal(player1, 1000*costToRoll);
+        vm.deal(player1, 1000 * costToRoll);
         vm.deal(address(game), 1000000 ether);
 
         game.roll{value: costToRoll}();
@@ -164,12 +174,12 @@ contract JackpotJunctionTest is Test {
         assertLt(costToReroll, costToRoll);
         game.roll{value: costToReroll}();
 
-        assertEq(player1.balance, 999*costToRoll);
+        assertEq(player1.balance, 999 * costToRoll);
     }
 
     function test_reroll_cost_applied_at_block_deadline() public {
         vm.startPrank(player1);
-        vm.deal(player1, 1000*costToRoll);
+        vm.deal(player1, 1000 * costToRoll);
         vm.deal(address(game), 1000000 ether);
 
         game.roll{value: costToRoll}();
@@ -178,9 +188,8 @@ contract JackpotJunctionTest is Test {
 
         game.roll{value: costToReroll}();
 
-        assertEq(player1.balance, 999*costToRoll - costToReroll);
+        assertEq(player1.balance, 999 * costToRoll - costToReroll);
     }
-
 
     function test_outcome_reverts_before_tick() public {
         vm.startPrank(player1);
@@ -218,7 +227,6 @@ contract JackpotJunctionTest is Test {
         (uint256 entropy,,) = game.outcome(player1, false);
         assertEq(entropy, expectedEntropy);
     }
-
 }
 
 contract JackpotJunctionPlayTest is Test {
@@ -282,13 +290,55 @@ contract JackpotJunctionPlayTest is Test {
         game.acceptWithCards(0, 1, 2, 3);
     }
 
+    function test_reroll_cost_not_applied_after_acceptance() public {
+        vm.startPrank(player1);
+        vm.deal(player1, 1000 * costToRoll);
+        vm.deal(address(game), 1000000 ether);
+
+        game.roll{value: costToRoll}();
+        vm.roll(block.number + game.BlocksToAct());
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.accept();
+
+        assertLt(costToReroll, costToRoll);
+        vm.roll(block.number + 1);
+
+        vm.expectRevert(JackpotJunction.InsufficientValue.selector);
+        game.roll{value: costToReroll}();
+
+        game.roll{value: costToRoll}();
+    }
+
+    function test_reroll_cost_not_applied_after_acceptance_with_cards() public {
+        vm.startPrank(player2);
+        vm.deal(player2, 1000 * costToRoll);
+        vm.deal(address(game), 1000000 ether);
+
+        game.roll{value: costToRoll}();
+        vm.roll(block.number + game.BlocksToAct());
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.acceptWithCards(0, 1, 2, 3);
+
+        assertLt(costToReroll, costToRoll);
+        vm.roll(block.number + 1);
+
+        vm.expectRevert(JackpotJunction.InsufficientValue.selector);
+        game.roll{value: costToReroll}();
+
+        game.roll{value: costToRoll}();
+    }
+
     function test_nothing_then_item() public {
         uint256 actualEntropy;
         uint256 actualOutcome;
         uint256 actualValue;
 
         vm.startPrank(player1);
-        vm.deal(player1, 1000*costToRoll);
+        vm.deal(player1, 1000 * costToRoll);
         vm.deal(address(game), 1000000 ether);
 
         vm.expectEmit();
@@ -313,18 +363,18 @@ contract JackpotJunctionPlayTest is Test {
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
         assertEq(actualEntropy, game.Entropy());
         assertEq(actualOutcome, 1);
-        assertEq(actualValue, 4*terrainType + itemType);
+        assertEq(actualValue, 4 * terrainType + itemType);
 
-        assertEq(game.balanceOf(player1, 4*terrainType + itemType), 0);
+        assertEq(game.balanceOf(player1, 4 * terrainType + itemType), 0);
 
         vm.expectEmit();
-        emit Award(player1, 1, 4*terrainType + itemType);
+        emit Award(player1, 1, 4 * terrainType + itemType);
         (actualEntropy, actualOutcome, actualValue) = game.accept();
         assertEq(actualEntropy, game.Entropy());
         assertEq(actualOutcome, 1);
-        assertEq(actualValue, 4*terrainType + itemType);
+        assertEq(actualValue, 4 * terrainType + itemType);
 
-        assertEq(game.balanceOf(player1, 4*terrainType + itemType), 1);
+        assertEq(game.balanceOf(player1, 4 * terrainType + itemType), 1);
     }
 
     function test_nothing_then_small_reward() public {
@@ -335,7 +385,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player1);
-        vm.deal(player1, 1000*costToRoll);
+        vm.deal(player1, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -363,8 +413,12 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(actualOutcome, 2);
         assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
 
-        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - (game.CostToRoll() + (game.CostToRoll() >> 1)));
-        assertEq(player1.balance, 1000*game.CostToRoll() + (game.CostToRoll() >> 1) - game.CostToReroll());
+        assertEq(
+            address(game).balance,
+            initialGameBalance + game.CostToRoll() + game.CostToReroll()
+                - (game.CostToRoll() + (game.CostToRoll() >> 1))
+        );
+        assertEq(player1.balance, 1000 * game.CostToRoll() + (game.CostToRoll() >> 1) - game.CostToReroll());
     }
 
     function test_nothing_then_medium_reward() public {
@@ -375,7 +429,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player1);
-        vm.deal(player1, 1000*costToRoll);
+        vm.deal(player1, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -403,8 +457,12 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(actualOutcome, 3);
         assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
 
-        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6));
-        assertEq(player1.balance, 999*game.CostToRoll()- game.CostToReroll() + actualValue);
+        assertEq(
+            address(game).balance,
+            initialGameBalance + game.CostToRoll() + game.CostToReroll()
+                - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6)
+        );
+        assertEq(player1.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
     }
 
     function test_nothing_then_large_reward() public {
@@ -415,7 +473,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player1);
-        vm.deal(player1, 1000*costToRoll);
+        vm.deal(player1, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -443,8 +501,12 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(actualOutcome, 4);
         assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
 
-        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1));
-        assertEq(player1.balance, 999*game.CostToRoll()- game.CostToReroll() + actualValue);
+        assertEq(
+            address(game).balance,
+            initialGameBalance + game.CostToRoll() + game.CostToReroll()
+                - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1)
+        );
+        assertEq(player1.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
     }
 
     function test_bonus_nothing_then_item() public {
@@ -453,7 +515,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 actualValue;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), 1000000 ether);
 
         game.roll{value: costToRoll}();
@@ -474,16 +536,16 @@ contract JackpotJunctionPlayTest is Test {
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
         assertEq(actualEntropy, game.Entropy());
         assertEq(actualOutcome, 1);
-        assertEq(actualValue, 4*terrainType + itemType);
+        assertEq(actualValue, 4 * terrainType + itemType);
 
-        assertEq(game.balanceOf(player2, 4*terrainType + itemType), 1);
+        assertEq(game.balanceOf(player2, 4 * terrainType + itemType), 1);
 
         (actualEntropy, actualOutcome, actualValue) = game.acceptWithCards(0, 1, 2, 3);
         assertEq(actualEntropy, game.Entropy());
         assertEq(actualOutcome, 1);
-        assertEq(actualValue, 4*terrainType + itemType);
+        assertEq(actualValue, 4 * terrainType + itemType);
 
-        assertEq(game.balanceOf(player2, 4*terrainType + itemType), 2);
+        assertEq(game.balanceOf(player2, 4 * terrainType + itemType), 2);
     }
 
     function test_bonus_nothing_then_small_reward() public {
@@ -494,7 +556,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -522,8 +584,12 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(actualOutcome, 2);
         assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
 
-        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - (game.CostToRoll() + (game.CostToRoll() >> 1)));
-        assertEq(player2.balance, 1000*game.CostToRoll() + (game.CostToRoll() >> 1) - game.CostToReroll());
+        assertEq(
+            address(game).balance,
+            initialGameBalance + game.CostToRoll() + game.CostToReroll()
+                - (game.CostToRoll() + (game.CostToRoll() >> 1))
+        );
+        assertEq(player2.balance, 1000 * game.CostToRoll() + (game.CostToRoll() >> 1) - game.CostToReroll());
     }
 
     function test_bonus_nothing_then_medium_reward() public {
@@ -534,7 +600,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -562,8 +628,12 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(actualOutcome, 3);
         assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
 
-        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6));
-        assertEq(player2.balance, 999*game.CostToRoll()- game.CostToReroll() + actualValue);
+        assertEq(
+            address(game).balance,
+            initialGameBalance + game.CostToRoll() + game.CostToReroll()
+                - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6)
+        );
+        assertEq(player2.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
     }
 
     function test_bonus_nothing_then_large_reward() public {
@@ -574,7 +644,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -602,15 +672,19 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(actualOutcome, 4);
         assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
 
-        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll() - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1));
-        assertEq(player2.balance, 999*game.CostToRoll()- game.CostToReroll() + actualValue);
+        assertEq(
+            address(game).balance,
+            initialGameBalance + game.CostToRoll() + game.CostToReroll()
+                - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1)
+        );
+        assertEq(player2.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
     }
 
     function test_bonus_acceptance_fails_with_incorrect_item_types() public {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -635,7 +709,7 @@ contract JackpotJunctionPlayTest is Test {
         game.acceptWithCards(0, 1, 2, 2);
 
         assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
-        assertEq(player2.balance, 999*game.CostToRoll() - game.CostToReroll());
+        assertEq(player2.balance, 999 * game.CostToRoll() - game.CostToReroll());
     }
 
     function test_bonus_is_not_applied_if_cover_is_not_max_tier() public {
@@ -646,7 +720,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -654,7 +728,6 @@ contract JackpotJunctionPlayTest is Test {
         assertGe(game.UnmodifiedOutcomesCumulativeMass(0) - 1, game.ImprovedOutcomesCumulativeMass(0));
         game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(0) - 1);
         game.roll{value: costToReroll}();
-
 
         vm.roll(block.number + 1);
         game.mint(player1, 28, 1);
@@ -678,7 +751,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -709,7 +782,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -740,7 +813,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -771,7 +844,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -795,7 +868,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -819,7 +892,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -843,7 +916,7 @@ contract JackpotJunctionPlayTest is Test {
         uint256 initialGameBalance = 1000000 ether;
 
         vm.startPrank(player2);
-        vm.deal(player2, 1000*costToRoll);
+        vm.deal(player2, 1000 * costToRoll);
         vm.deal(address(game), initialGameBalance);
 
         game.roll{value: costToRoll}();
@@ -945,7 +1018,7 @@ contract JackpotJunctionPlayTest is Test {
                 uint256 inputPoolID = 92384 * 28 + 4 * j + i;
                 uint256 numOutputs = 19283498;
                 game.burn(inputPoolID, game.balanceOf(player2, inputPoolID));
-                game.mint(player2, inputPoolID, 2*numOutputs - 1);
+                game.mint(player2, inputPoolID, 2 * numOutputs - 1);
                 vm.expectRevert(abi.encodeWithSelector(JackpotJunction.InsufficientItems.selector, inputPoolID));
                 game.craft(inputPoolID, numOutputs);
             }

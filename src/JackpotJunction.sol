@@ -65,6 +65,8 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         }
     }
 
+    receive() external payable {}
+
     function genera(uint256 poolID) public pure returns (uint256 itemType, uint256 terrainType, uint256 tier) {
         tier = poolID / 28;
         terrainType = (poolID % 28) / 4;
@@ -114,7 +116,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         emit Roll(msg.sender);
     }
 
-    function _entropy(address degenerate) internal virtual view returns (uint256) {
+    function _entropy(address degenerate) internal view virtual returns (uint256) {
         return uint256(blockhash(LastRollBlock[degenerate]));
     }
 
@@ -169,9 +171,14 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         emit Award(msg.sender, _outcome, value);
     }
 
+    function _clearRoll() internal {
+        LastRollBlock[msg.sender] = 0;
+    }
+
     function accept() external nonReentrant returns (uint256, uint256, uint256) {
         (uint256 entropy, uint256 _outcome, uint256 value) = outcome(msg.sender, false);
         _award(_outcome, value);
+        _clearRoll();
         return (entropy, _outcome, value);
     }
 
@@ -241,6 +248,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
 
         (uint256 entropy, uint256 _outcome, uint256 value) = outcome(msg.sender, bonus);
         _award(_outcome, value);
+        _clearRoll();
         return (entropy, _outcome, value);
     }
 
