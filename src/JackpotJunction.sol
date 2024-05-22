@@ -244,15 +244,15 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         return (entropy, _outcome, value);
     }
 
-    function craft(uint256 poolID) external nonReentrant returns (uint256 newPoolID) {
-        if (balanceOf(msg.sender, poolID) < 2) {
+    function craft(uint256 poolID, uint256 numOutputs) external nonReentrant returns (uint256 newPoolID) {
+        if (balanceOf(msg.sender, poolID) < 2 * numOutputs) {
             revert InsufficientItems(poolID);
         }
 
         newPoolID = poolID + 28;
 
-        _burn(msg.sender, poolID, 2);
-        _mint(msg.sender, newPoolID, 1, "");
+        _burn(msg.sender, poolID, 2 * numOutputs);
+        _mint(msg.sender, newPoolID, numOutputs, "");
 
         (uint256 itemType, uint256 terrainType, uint256 tier) = genera(newPoolID);
         if (CurrentTier[itemType][terrainType] < tier) {

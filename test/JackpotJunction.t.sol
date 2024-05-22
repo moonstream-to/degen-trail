@@ -31,6 +31,8 @@ contract TestableJackpotJunction is JackpotJunction {
 }
 
 contract JackpotJunctionTest is Test {
+    event Roll(address indexed player);
+
     JackpotJunction game;
 
     uint256 deployerPrivateKey = 0x42;
@@ -136,6 +138,8 @@ contract JackpotJunctionTest is Test {
         vm.expectRevert(JackpotJunction.InsufficientValue.selector);
         game.roll();
 
+        vm.expectEmit();
+        emit Roll(player1);
         game.roll{value: costToRoll}();
         assertEq(player1.balance, 0);
         assertEq(address(game).balance, costToRoll);
@@ -217,6 +221,10 @@ contract JackpotJunctionTest is Test {
 }
 
 contract JackpotJunctionPlayTest is Test {
+    event Roll(address indexed player);
+    event TierUnlocked(uint256 indexed itemType, uint256 indexed terrainType, uint256 indexed tier, uint256 poolID);
+    event Award(address indexed player, uint256 indexed outcome, uint256 value);
+
     TestableJackpotJunction game;
 
     uint256 deployerPrivateKey = 0x42;
@@ -254,6 +262,8 @@ contract JackpotJunctionPlayTest is Test {
         vm.deal(player1, 1000*costToRoll);
         vm.deal(address(game), 1000000 ether);
 
+        vm.expectEmit();
+        emit Roll(player1);
         game.roll{value: costToRoll}();
 
         vm.roll(block.number + 1);
@@ -263,6 +273,8 @@ contract JackpotJunctionPlayTest is Test {
         assertEq(actualOutcome, 0);
         assertEq(actualValue, 0);
 
+        vm.expectEmit();
+        emit Roll(player1);
         game.roll{value: costToReroll}();
 
         vm.roll(block.number + 1);
@@ -276,6 +288,8 @@ contract JackpotJunctionPlayTest is Test {
 
         assertEq(game.balanceOf(player1, 4*terrainType + itemType), 0);
 
+        vm.expectEmit();
+        emit Award(player1, 1, 4*terrainType + itemType);
         (actualEntropy, actualOutcome, actualValue) = game.accept();
         assertEq(actualEntropy, game.Entropy());
         assertEq(actualOutcome, 1);
@@ -826,11 +840,36 @@ contract JackpotJunctionPlayTest is Test {
                 uint256 initialInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 initialOutputBalance = game.balanceOf(player2, outputPoolID);
                 assertEq(game.CurrentTier(i, j), 0);
-                game.craft(inputPoolID);
+                vm.expectEmit();
+                emit TierUnlocked(i, j, 1, outputPoolID);
+                game.craft(inputPoolID, 1);
                 uint256 terminalInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 terminalOutputBalance = game.balanceOf(player2, outputPoolID);
                 assertEq(terminalInputBalance, initialInputBalance - 2);
                 assertEq(terminalOutputBalance, initialOutputBalance + 1);
+                assertEq(game.CurrentTier(i, j), 1);
+            }
+        }
+    }
+
+    function test_crafting_tier_0_to_tier_1_193284_outputs() public {
+        vm.startPrank(player2);
+        for (uint256 i = 0; i < 4; i++) {
+            for (uint256 j = 0; j < 7; j++) {
+                uint256 inputPoolID = 4 * j + i;
+                uint256 outputPoolID = 28 + inputPoolID;
+                uint256 numOutputs = 193284;
+                game.mint(player2, inputPoolID, 2 * numOutputs);
+                uint256 initialInputBalance = game.balanceOf(player2, inputPoolID);
+                uint256 initialOutputBalance = game.balanceOf(player2, outputPoolID);
+                assertEq(game.CurrentTier(i, j), 0);
+                vm.expectEmit();
+                emit TierUnlocked(i, j, 1, outputPoolID);
+                game.craft(inputPoolID, numOutputs);
+                uint256 terminalInputBalance = game.balanceOf(player2, inputPoolID);
+                uint256 terminalOutputBalance = game.balanceOf(player2, outputPoolID);
+                assertEq(terminalInputBalance, initialInputBalance - 2 * numOutputs);
+                assertEq(terminalOutputBalance, initialOutputBalance + numOutputs);
                 assertEq(game.CurrentTier(i, j), 1);
             }
         }
@@ -846,7 +885,9 @@ contract JackpotJunctionPlayTest is Test {
                 uint256 initialInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 initialOutputBalance = game.balanceOf(player2, outputPoolID);
                 assertEq(game.CurrentTier(i, j), 92384);
-                game.craft(inputPoolID);
+                vm.expectEmit();
+                emit TierUnlocked(i, j, 92385, outputPoolID);
+                game.craft(inputPoolID, 1);
                 uint256 terminalInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 terminalOutputBalance = game.balanceOf(player2, outputPoolID);
                 assertEq(terminalInputBalance, initialInputBalance - 2);
@@ -856,4 +897,29 @@ contract JackpotJunctionPlayTest is Test {
         }
     }
 
+    function test_crafting_fails_when_insufficient_zero_balance() public {
+        vm.startPrank(player2);
+        for (uint256 i = 0; i < 4; i++) {
+            for (uint256 j = 0; j < 7; j++) {
+                uint256 inputPoolID = 92384 * 28 + 4 * j + i;
+                game.burn(inputPoolID, game.balanceOf(player2, inputPoolID));
+                vm.expectRevert(abi.encodeWithSelector(JackpotJunction.InsufficientItems.selector, inputPoolID));
+                game.craft(inputPoolID, 1);
+            }
+        }
+    }
+
+    function test_crafting_fails_when_insufficient_positive_balance() public {
+        vm.startPrank(player2);
+        for (uint256 i = 0; i < 4; i++) {
+            for (uint256 j = 0; j < 7; j++) {
+                uint256 inputPoolID = 92384 * 28 + 4 * j + i;
+                uint256 numOutputs = 19283498;
+                game.burn(inputPoolID, game.balanceOf(player2, inputPoolID));
+                game.mint(player2, inputPoolID, 2*numOutputs - 1);
+                vm.expectRevert(abi.encodeWithSelector(JackpotJunction.InsufficientItems.selector, inputPoolID));
+                game.craft(inputPoolID, numOutputs);
+            }
+        }
+    }
 }
