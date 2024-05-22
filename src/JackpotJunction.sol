@@ -171,9 +171,14 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         emit Award(msg.sender, _outcome, value);
     }
 
+    function _clearRoll() internal {
+        LastRollBlock[msg.sender] = 0;
+    }
+
     function accept() external nonReentrant returns (uint256, uint256, uint256) {
         (uint256 entropy, uint256 _outcome, uint256 value) = outcome(msg.sender, false);
         _award(_outcome, value);
+        _clearRoll();
         return (entropy, _outcome, value);
     }
 
@@ -243,6 +248,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
 
         (uint256 entropy, uint256 _outcome, uint256 value) = outcome(msg.sender, bonus);
         _award(_outcome, value);
+        _clearRoll();
         return (entropy, _outcome, value);
     }
 

@@ -191,6 +191,7 @@ contract JackpotJunctionTest is Test {
         assertEq(player1.balance, 999 * costToRoll - costToReroll);
     }
 
+
     function test_outcome_reverts_before_tick() public {
         vm.startPrank(player1);
 
@@ -288,6 +289,48 @@ contract JackpotJunctionPlayTest is Test {
         vm.roll(block.number + game.BlocksToAct() + 1);
         vm.expectRevert(JackpotJunction.DeadlineExceeded.selector);
         game.acceptWithCards(0, 1, 2, 3);
+    }
+
+    function test_reroll_cost_not_applied_after_acceptance() public {
+        vm.startPrank(player1);
+        vm.deal(player1, 1000 * costToRoll);
+        vm.deal(address(game), 1000000 ether);
+
+        game.roll{value: costToRoll}();
+        vm.roll(block.number + game.BlocksToAct());
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.accept();
+
+        assertLt(costToReroll, costToRoll);
+        vm.roll(block.number + 1);
+
+        vm.expectRevert(JackpotJunction.InsufficientValue.selector);
+        game.roll{value: costToReroll}();
+
+        game.roll{value: costToRoll}();
+    }
+
+    function test_reroll_cost_not_applied_after_acceptance_with_cards() public {
+        vm.startPrank(player2);
+        vm.deal(player2, 1000 * costToRoll);
+        vm.deal(address(game), 1000000 ether);
+
+        game.roll{value: costToRoll}();
+        vm.roll(block.number + game.BlocksToAct());
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.acceptWithCards(0, 1, 2, 3);
+
+        assertLt(costToReroll, costToRoll);
+        vm.roll(block.number + 1);
+
+        vm.expectRevert(JackpotJunction.InsufficientValue.selector);
+        game.roll{value: costToReroll}();
+
+        game.roll{value: costToRoll}();
     }
 
     function test_nothing_then_item() public {
