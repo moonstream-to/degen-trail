@@ -218,6 +218,7 @@ contract JackpotJunctionTest is Test {
         (uint256 entropy,,) = game.outcome(player1, false);
         assertEq(entropy, expectedEntropy);
     }
+
 }
 
 contract JackpotJunctionPlayTest is Test {
@@ -251,6 +252,34 @@ contract JackpotJunctionPlayTest is Test {
                 game.mint(player2, 4 * j + i, 1);
             }
         }
+    }
+
+    function test_accept_reverts_after_deadline() public {
+        vm.startPrank(player1);
+
+        vm.deal(player1, 1000 * costToRoll);
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+        vm.expectRevert(JackpotJunction.DeadlineExceeded.selector);
+        game.accept();
+    }
+
+    function test_accept_with_cards_reverts_after_deadline() public {
+        vm.startPrank(player1);
+
+        vm.deal(player1, 1000 * costToRoll);
+
+        game.roll{value: costToRoll}();
+
+        for (uint256 i = 0; i < 4; i++) {
+            game.mint(player1, i, 1);
+        }
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+        vm.expectRevert(JackpotJunction.DeadlineExceeded.selector);
+        game.acceptWithCards(0, 1, 2, 3);
     }
 
     function test_nothing_then_item() public {
