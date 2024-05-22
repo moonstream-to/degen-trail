@@ -20,7 +20,7 @@ test:
 	forge test -vvv
 
 clean:
-	rm -rf out/*
+	rm -rf out/* bin/*
 
 forge:
 	forge build
