@@ -191,7 +191,6 @@ contract JackpotJunctionTest is Test {
         assertEq(player1.balance, 999 * costToRoll - costToReroll);
     }
 
-
     function test_outcome_reverts_before_tick() public {
         vm.startPrank(player1);
 
