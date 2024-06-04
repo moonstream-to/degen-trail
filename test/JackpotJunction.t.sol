@@ -223,8 +223,10 @@ contract JackpotJunctionTest is Test {
 
         vm.roll(block.number + game.BlocksToAct());
 
-        uint256 expectedEntropy = uint256(blockhash(block.number - game.BlocksToAct()));
+        uint256 hash = uint256(blockhash(block.number - game.BlocksToAct()));
+        uint256 expectedEntropy = uint256(keccak256(abi.encode(blockhash(block.number - game.BlocksToAct()), player1)));
         (uint256 entropy,,) = game.outcome(player1, false);
+        assertNotEq(entropy, hash);
         assertEq(entropy, expectedEntropy);
     }
 }

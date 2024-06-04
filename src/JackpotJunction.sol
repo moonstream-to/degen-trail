@@ -117,7 +117,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     }
 
     function _entropy(address degenerate) internal view virtual returns (uint256) {
-        return uint256(blockhash(LastRollBlock[degenerate]));
+        return uint256(keccak256(abi.encode(blockhash(LastRollBlock[degenerate]), degenerate)));
     }
 
     function outcome(address degenerate, bool bonus) public view returns (uint256, uint256, uint256) {
