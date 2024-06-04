@@ -4,6 +4,8 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/JackpotJunction.sol";
 
+// TODO: Test new rolling and acceptance mechanics using equipped items.
+
 contract TestableJackpotJunction is JackpotJunction {
     uint256 public Entropy;
 
