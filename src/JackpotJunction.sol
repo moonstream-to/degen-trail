@@ -41,6 +41,23 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     // itemType => terrainType => tier
     mapping(uint256 => mapping(uint256 => uint256)) public CurrentTier;
 
+    /// EquippedCover indicates the poolID of the cover that is currently equipped by the given player.
+    /// The mapping is address(player) => poolID + 1.
+    /// The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    mapping(address => uint256) public EquippedCover;
+    /// EquippedBody indicates the poolID of the body that is currently equipped by the given player.
+    /// The mapping is address(player) => poolID + 1.
+    /// The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    mapping(address => uint256) public EquippedBody;
+    /// EquippedWheels indicates the poolID of the wheels that are currently equipped by the given player.
+    /// The mapping is address(player) => poolID + 1.
+    /// The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    mapping(address => uint256) public EquippedWheels;
+    /// EquippedBeasts indicates the poolID of the beasts that are currently equipped by the given player.
+    /// The mapping is address(player) => poolID + 1.
+    /// The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    mapping(address => uint256) public EquippedBeasts;
+
     event TierUnlocked(uint256 indexed itemType, uint256 indexed terrainType, uint256 indexed tier, uint256 poolID);
     event Roll(address indexed player);
     event Award(address indexed player, uint256 indexed outcome, uint256 value);
@@ -71,6 +88,50 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         tier = poolID / 28;
         terrainType = (poolID % 28) / 4;
         itemType = poolID % 4;
+    }
+
+    function hasBonus(address degenerate) public view returns (bool bonus) {
+        bonus = false;
+
+        uint256 wagonCover = EquippedCover[degenerate];
+        uint256 wagonBody = EquippedBody[degenerate];
+        uint256 wheels = EquippedWheels[degenerate];
+        uint256 beastTrain = EquippedBeasts[degenerate];
+
+        if (wagonCover != 0 && wagonBody != 0 && wheels != 0 && beastTrain != 0) {
+            uint256 terrainType;
+
+            uint256 currentItemType;
+            uint256 currentTier;
+            uint256 currentTerrainType;
+
+            (currentItemType, currentTerrainType, currentTier) = genera(wagonCover);
+            if (CurrentTier[currentItemType][currentTerrainType] == currentTier) {
+                bonus = true;
+            }
+            terrainType = currentTerrainType;
+
+            if (bonus) {
+                (currentItemType, currentTerrainType, currentTier) = genera(wagonBody);
+                if (CurrentTier[currentItemType][currentTerrainType] != currentTier || currentTerrainType != terrainType) {
+                    bonus = false;
+                }
+            }
+
+            if (bonus) {
+                (currentItemType, currentTerrainType, currentTier) = genera(wheels);
+                if (CurrentTier[currentItemType][currentTerrainType] != currentTier || currentTerrainType != terrainType) {
+                    bonus = false;
+                }
+            }
+
+            if (bonus) {
+                (currentItemType, currentTerrainType, currentTier) = genera(beastTrain);
+                if (CurrentTier[currentItemType][currentTerrainType] != currentTier || currentTerrainType != terrainType) {
+                    bonus = false;
+                }
+            }
+        }
     }
 
     function sampleUnmodifiedOutcomeCumulativeMass(uint256 entropy) public view returns (uint256) {
@@ -135,10 +196,10 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         uint256 entropy = _entropy(degenerate);
 
         uint256 _outcome;
-        if (!bonus) {
-            _outcome = sampleUnmodifiedOutcomeCumulativeMass(entropy);
-        } else {
+        if (bonus) {
             _outcome = sampleImprovedOutcomesCumulativeMass(entropy);
+        } else {
+            _outcome = sampleUnmodifiedOutcomeCumulativeMass(entropy);
         }
 
         uint256 value;
@@ -176,80 +237,79 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     }
 
     function accept() external nonReentrant returns (uint256, uint256, uint256) {
-        (uint256 entropy, uint256 _outcome, uint256 value) = outcome(msg.sender, false);
+        (uint256 entropy, uint256 _outcome, uint256 value) = outcome(msg.sender, hasBonus(msg.sender));
         _award(_outcome, value);
         _clearRoll();
         return (entropy, _outcome, value);
     }
 
-    function acceptWithCards(uint256 wagonCover, uint256 wagonBody, uint256 wheels, uint256 beastTrain)
-        external
-        nonReentrant
-        returns (uint256, uint256, uint256)
-    {
-        bool bonus = false;
-
-        uint256 terrainType;
-
-        uint256 currentItemType;
-        uint256 currentTier;
-        uint256 currentTerrainType;
-
-        (currentItemType, currentTerrainType, currentTier) = genera(wagonCover);
-        if (currentItemType != 0) {
-            revert InvalidItem(wagonCover);
-        }
-        if (balanceOf(msg.sender, wagonCover) == 0) {
-            revert InsufficientItems(wagonCover);
-        }
-        if (CurrentTier[currentItemType][currentTerrainType] == currentTier) {
-            bonus = true;
-        }
-        terrainType = currentTerrainType;
-
-        if (bonus) {
-            (currentItemType, currentTerrainType, currentTier) = genera(wagonBody);
-            if (currentItemType != 1) {
-                revert InvalidItem(wagonBody);
-            }
-            if (balanceOf(msg.sender, wagonBody) == 0) {
-                revert InsufficientItems(wagonBody);
-            }
-            if (CurrentTier[currentItemType][currentTerrainType] != currentTier || currentTerrainType != terrainType) {
-                bonus = false;
-            }
-        }
-
-        if (bonus) {
-            (currentItemType, currentTerrainType, currentTier) = genera(wheels);
-            if (currentItemType != 2) {
-                revert InvalidItem(wheels);
-            }
-            if (balanceOf(msg.sender, wheels) == 0) {
-                revert InsufficientItems(wheels);
-            }
-            if (CurrentTier[currentItemType][currentTerrainType] != currentTier || currentTerrainType != terrainType) {
-                bonus = false;
+    function equip(uint256[] calldata poolIDs) external nonReentrant {
+        for (uint256 i = 0; i < poolIDs.length; i++) {
+            (uint256 itemType,,) = genera(poolIDs[i]);
+            if (itemType == 0) {
+                uint256 currentPoolID;
+                if (EquippedCover[msg.sender] != 0) {
+                    currentPoolID = EquippedCover[msg.sender] - 1;
+                    _safeTransferFrom(address(this), msg.sender, currentPoolID, 1, "");
+                }
+                _safeTransferFrom(msg.sender, address(this), poolIDs[i], 1, "");
+                EquippedCover[msg.sender] = poolIDs[i] + 1;
+            } else if (itemType == 1) {
+                uint256 currentPoolID;
+                if (EquippedBody[msg.sender] != 0) {
+                    currentPoolID = EquippedBody[msg.sender] - 1;
+                    _safeTransferFrom(address(this), msg.sender, currentPoolID, 1, "");
+                }
+                _safeTransferFrom(msg.sender, address(this), poolIDs[i], 1, "");
+                EquippedBody[msg.sender] = poolIDs[i] + 1;
+            } else if (itemType == 2) {
+                uint256 currentPoolID;
+                if (EquippedWheels[msg.sender] != 0) {
+                    currentPoolID = EquippedWheels[msg.sender] - 1;
+                    _safeTransferFrom(address(this), msg.sender, currentPoolID, 1, "");
+                }
+                _safeTransferFrom(msg.sender, address(this), poolIDs[i], 1, "");
+                EquippedWheels[msg.sender] = poolIDs[i] + 1;
+            } else if (itemType == 3) {
+                uint256 currentPoolID;
+                if (EquippedBeasts[msg.sender] != 0) {
+                    currentPoolID = EquippedBeasts[msg.sender] - 1;
+                    _safeTransferFrom(address(this), msg.sender, currentPoolID, 1, "");
+                }
+                _safeTransferFrom(msg.sender, address(this), poolIDs[i], 1, "");
+                EquippedBeasts[msg.sender] = poolIDs[i] + 1;
+            } else {
+                // If you end up in this branch, there's a bug in "genera".
+                revert InvalidItem(poolIDs[i]);
             }
         }
+    }
 
-        if (bonus) {
-            (currentItemType, currentTerrainType, currentTier) = genera(beastTrain);
-            if (currentItemType != 3) {
-                revert InvalidItem(beastTrain);
-            }
-            if (balanceOf(msg.sender, beastTrain) == 0) {
-                revert InsufficientItems(beastTrain);
-            }
-            if (CurrentTier[currentItemType][currentTerrainType] != currentTier || currentTerrainType != terrainType) {
-                bonus = false;
-            }
+    function unequip() external nonReentrant {
+        uint256 currentPoolID;
+        if (EquippedCover[msg.sender] != 0) {
+            currentPoolID = EquippedCover[msg.sender] - 1;
+            _safeTransferFrom(address(this), msg.sender, currentPoolID, 1, "");
+            delete EquippedCover[msg.sender];
         }
 
-        (uint256 entropy, uint256 _outcome, uint256 value) = outcome(msg.sender, bonus);
-        _award(_outcome, value);
-        _clearRoll();
-        return (entropy, _outcome, value);
+        if (EquippedBody[msg.sender] != 0) {
+            currentPoolID = EquippedBody[msg.sender] - 1;
+            _safeTransferFrom(address(this), msg.sender, currentPoolID, 1, "");
+            delete EquippedBody[msg.sender];
+        }
+
+        if (EquippedWheels[msg.sender] != 0) {
+            currentPoolID = EquippedWheels[msg.sender] - 1;
+            _safeTransferFrom(address(this), msg.sender, currentPoolID, 1, "");
+            delete EquippedWheels[msg.sender];
+        }
+
+        if (EquippedBeasts[msg.sender] != 0) {
+            currentPoolID = EquippedBeasts[msg.sender] - 1;
+            _safeTransferFrom(address(this), msg.sender, currentPoolID, 1, "");
+            delete EquippedBeasts[msg.sender];
+        }
     }
 
     function craft(uint256 poolID, uint256 numOutputs) external nonReentrant returns (uint256 newPoolID) {
