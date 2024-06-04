@@ -244,6 +244,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     }
 
     function equip(uint256[] calldata poolIDs) external nonReentrant {
+        // TODO: Should only be callable if player is not currently rolling.
         for (uint256 i = 0; i < poolIDs.length; i++) {
             (uint256 itemType,,) = genera(poolIDs[i]);
             if (itemType == 0) {
@@ -286,6 +287,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     }
 
     function unequip() external nonReentrant {
+        // TODO: Should only be callable if player is not currently rolling.
         uint256 currentPoolID;
         if (EquippedCover[msg.sender] != 0) {
             currentPoolID = EquippedCover[msg.sender] - 1;
