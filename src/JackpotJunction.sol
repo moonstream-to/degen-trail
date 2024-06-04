@@ -63,6 +63,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     event Award(address indexed player, uint256 indexed outcome, uint256 value);
 
     error DeadlineExceeded();
+    error RollInProgress();
     error WaitForTick();
     error InsufficientValue();
     error InvalidItem(uint256 poolID);
@@ -83,6 +84,18 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     }
 
     receive() external payable {}
+
+    function _enforceDeadline(address degenerate) internal view {
+        if (block.number > LastRollBlock[degenerate] + BlocksToAct) {
+            revert DeadlineExceeded();
+        }
+    }
+
+    function _enforceNotRolling(address degenerate) internal view {
+        if (block.number <= LastRollBlock[degenerate] + BlocksToAct) {
+            revert RollInProgress();
+        }
+    }
 
     function genera(uint256 poolID) public pure returns (uint256 itemType, uint256 terrainType, uint256 tier) {
         tier = poolID / 28;
@@ -186,9 +199,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
             revert WaitForTick();
         }
 
-        if (block.number > LastRollBlock[degenerate] + BlocksToAct) {
-            revert DeadlineExceeded();
-        }
+        _enforceDeadline(degenerate);
 
         // entropy layout:
         // |- 118 bits -|- 118 bits -|- 20 bits -|
@@ -237,14 +248,19 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     }
 
     function accept() external nonReentrant returns (uint256, uint256, uint256) {
+        // The call to outcome() enforces the following constraints:
+        // - At least one block has passed after the player rolled.
+        // - The player last rolled at most BlocksToAct blocks ago.
         (uint256 entropy, uint256 _outcome, uint256 value) = outcome(msg.sender, hasBonus(msg.sender));
+
         _award(_outcome, value);
         _clearRoll();
         return (entropy, _outcome, value);
     }
 
     function equip(uint256[] calldata poolIDs) external nonReentrant {
-        // TODO: Should only be callable if player is not currently rolling.
+        _enforceNotRolling(msg.sender);
+
         for (uint256 i = 0; i < poolIDs.length; i++) {
             (uint256 itemType,,) = genera(poolIDs[i]);
             if (itemType == 0) {
@@ -287,7 +303,8 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     }
 
     function unequip() external nonReentrant {
-        // TODO: Should only be callable if player is not currently rolling.
+        _enforceNotRolling(msg.sender);
+
         uint256 currentPoolID;
         if (EquippedCover[msg.sender] != 0) {
             currentPoolID = EquippedCover[msg.sender] - 1;
