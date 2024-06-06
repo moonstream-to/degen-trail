@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
+	"net/http"
 	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/moonstream-to/degen-trail/bindings/JackpotJunction"
+	"github.com/moonstream-to/degen-trail/jj/entropy"
 	"github.com/moonstream-to/degen-trail/jj/version"
 )
 
@@ -21,9 +24,10 @@ func CreateRootCommand() *cobra.Command {
 
 	completionCmd := CreateCompletionCommand(rootCmd)
 	versionCmd := CreateVersionCommand()
+	entropyCmd := CreateEntropycommand()
 	contractCmd := JackpotJunction.CreateJackpotJunctionCommand()
 	contractCmd.Use = "contract"
-	rootCmd.AddCommand(completionCmd, versionCmd, contractCmd)
+	rootCmd.AddCommand(completionCmd, versionCmd, entropyCmd, contractCmd)
 
 	// By default, cobra Command objects write to stderr. We have to forcibly set them to output to
 	// stdout.
@@ -96,4 +100,48 @@ func CreateVersionCommand() *cobra.Command {
 	}
 
 	return versionCmd
+}
+
+func CreateEntropycommand() *cobra.Command {
+	var rpc string
+	var N, samples int
+
+	entropyCmd := &cobra.Command{
+		Use:   "entropy",
+		Short: "Calculate the entropy of the blockhashes modulo N of a random sample of blocks",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if rpc == "" {
+				return errors.New("--rpc/-r is required")
+			}
+			if N == 0 {
+				return errors.New("--base/-N is required")
+			}
+			if samples == 0 {
+				return errors.New("--samples/-s is required")
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client := &http.Client{}
+			blocks, blocksErr := entropy.GetRandomBlocks(client, rpc, nil, samples)
+			if blocksErr != nil {
+				return blocksErr
+			}
+
+			entropy, entropyErr := entropy.EntropyModN(blocks, N)
+			if entropyErr != nil {
+				return entropyErr
+			}
+
+			cmd.Println(entropy)
+
+			return nil
+		},
+	}
+
+	entropyCmd.Flags().StringVarP(&rpc, "rpc", "r", "", "JSON-RPC API URL for the blockchain to sample from")
+	entropyCmd.Flags().IntVarP(&N, "base", "N", 0, "Entropy is calculated for blockhashes modulo this base")
+	entropyCmd.Flags().IntVarP(&samples, "samples", "s", 0, "Number of blocks to sample")
+
+	return entropyCmd
 }
