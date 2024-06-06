@@ -127,6 +127,15 @@ func GetBlock(client *http.Client, rpc string, blockNumber *big.Int, id int) (Bl
 	return blockResponse.Result, nil
 }
 
+func GetBlockAsync(client *http.Client, rpc string, blockNumber *big.Int, id int, blocksChan chan<- BlockResult, errsChan chan<- error) {
+	block, blockErr := GetBlock(client, rpc, blockNumber, id)
+	if blockErr != nil {
+		errsChan <- blockErr
+	} else {
+		blocksChan <- block
+	}
+}
+
 func GetRandomBlocks(client *http.Client, rpc string, latestBlockNumber *big.Int, samples int) ([]BlockResult, error) {
 	if latestBlockNumber == nil {
 		latestBlock, latestBlockErr := GetBlock(client, rpc, nil, 0)
@@ -137,6 +146,9 @@ func GetRandomBlocks(client *http.Client, rpc string, latestBlockNumber *big.Int
 		latestBlockNumber.SetString(latestBlock.Number, 0)
 	}
 
+	blocksChan := make(chan BlockResult)
+	errsChan := make(chan error)
+
 	blocks := make([]BlockResult, samples)
 	for i := 0; i < samples; i++ {
 		blockNumber, sampleErr := rand.Int(rand.Reader, latestBlockNumber)
@@ -144,12 +156,20 @@ func GetRandomBlocks(client *http.Client, rpc string, latestBlockNumber *big.Int
 			return blocks, sampleErr
 		}
 
-		var blockErr error
-		blocks[i], blockErr = GetBlock(client, rpc, blockNumber, i)
-		if blockErr != nil {
+		go GetBlockAsync(client, rpc, blockNumber, i, blocksChan, errsChan)
+	}
+
+	numProcessed := 0
+	for {
+		select {
+		case block := <-blocksChan:
+			blocks[numProcessed] = block
+			numProcessed++
+			if numProcessed == samples {
+				return blocks, nil
+			}
+		case blockErr := <-errsChan:
 			return blocks, blockErr
 		}
 	}
-
-	return blocks, nil
 }

@@ -103,8 +103,8 @@ func CreateVersionCommand() *cobra.Command {
 }
 
 func CreateEntropycommand() *cobra.Command {
-	var rpc string
-	var N, samples int
+	var rpc, player string
+	var samples int
 
 	entropyCmd := &cobra.Command{
 		Use:   "entropy",
@@ -113,8 +113,8 @@ func CreateEntropycommand() *cobra.Command {
 			if rpc == "" {
 				return errors.New("--rpc/-r is required")
 			}
-			if N == 0 {
-				return errors.New("--base/-N is required")
+			if player == "" {
+				return errors.New("--player/-p is required")
 			}
 			if samples == 0 {
 				return errors.New("--samples/-s is required")
@@ -128,19 +128,16 @@ func CreateEntropycommand() *cobra.Command {
 				return blocksErr
 			}
 
-			entropy, entropyErr := entropy.EntropyModN(blocks, N)
-			if entropyErr != nil {
-				return entropyErr
-			}
+			itemEntropy, terrainEntropy, outcomeEntropy := entropy.Entropies(blocks, player)
 
-			cmd.Println(entropy)
+			cmd.Printf("Item entropy: %f\nTerrain entropy: %f\nOutcome entropy: %f\n", itemEntropy, terrainEntropy, outcomeEntropy)
 
 			return nil
 		},
 	}
 
 	entropyCmd.Flags().StringVarP(&rpc, "rpc", "r", "", "JSON-RPC API URL for the blockchain to sample from")
-	entropyCmd.Flags().IntVarP(&N, "base", "N", 0, "Entropy is calculated for blockhashes modulo this base")
+	entropyCmd.Flags().StringVarP(&player, "player", "p", "", "Player address")
 	entropyCmd.Flags().IntVarP(&samples, "samples", "s", 0, "Number of blocks to sample")
 
 	return entropyCmd
