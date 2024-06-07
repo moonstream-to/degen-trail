@@ -18,6 +18,8 @@ func Entropies(blocks []BlockResult, player string) (float64, float64, float64) 
 	seven := big.NewInt(7)
 	twenty := big.NewInt(20)
 	onehundredeighteen := big.NewInt(118)
+	outcomeMass := new(big.Int)
+	outcomeMass.Exp(two, twenty, nil)
 
 	outcomeMask := new(big.Int)
 	outcomeMask.Exp(two, twenty, nil)
@@ -77,7 +79,7 @@ func Entropies(blocks []BlockResult, player string) (float64, float64, float64) 
 
 			outcomeRNG := new(big.Int)
 			outcomeRNG.And(value, outcomeMask)
-			outcomeRNG.Mod(outcomeRNG, four)
+			outcomeRNG.Mod(outcomeRNG, outcomeMass)
 			outcomeReduction := outcomeRNG.Int64()
 			_, outcomeReductionExists := outcomeReductionFrequencies[outcomeReduction]
 			if outcomeReductionExists {
