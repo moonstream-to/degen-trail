@@ -26,27 +26,21 @@ Entropy here refers to [information theoretic entropy](https://en.wikipedia.org/
 
 In Jackpot Junction, there are 4 item types, 7 terrain types, and 4 outcomes. On a perfectly fair chain,
 the entropies of the item type distribution, terrain type distribution, and the outcome distribution
-would ideally be `lg(4) = 2`, `lg(7) ~ 2.80735492206`, and `lg(4) = 2` respectively.
+would ideally be `lg(4) = 2`, `lg(7) ~ 2.80735492206`, and `lg(2^20) = 20` respectively. Currently, we
+estimate the entropies by sampling and doing a straightforward (non-streaming) entropy calculation.
+To this end, if we sample `N` blocks with `N < 2^20`, we would expect the outcome distribution to have entropy
+`lg(N)`.
 
 On the Degen chain:
 
 ```
-$ bin/jj entropy -r "https://rpc.degen.tips" -p $PLAYER -s 1000
-Item entropy: 1.999317
-Terrain entropy: 2.792746
-Outcome entropy: 1.997760
+$ bin/jj entropy -r "https://rpc.degen.tips" -p $PLAYER -s 1024
+Item entropy: 1.997993
+Terrain entropy: 2.801292
+Outcome entropy: 9.998047
 ```
 
-On Base:
-
-```
-$ bin/jj entropy -r "https://mainnet.base.org" -p $PLAYER -s 1000
-Item entropy: 1.987233
-Terrain entropy: 2.792224
-Outcome entropy: 1.976641
-```
-
-Of course, we can estimate how far we would expect to be from the theoretical entropy over 1000 samples based
+Of course, we can estimate how far we would expect to be from the theoretical entropy over 1024 samples based
 on the multinomial distribution sample variance. We do not need to do this, however. The numbers speak volumes.
 
 ### Building the tool
@@ -80,3 +74,13 @@ with one of their goals being to maintain low block intervals even under load.
 For public chains using these stacks which aim to have block intervals of around 2 seconds at the higher end,
 assuming a heavy and unpredictable enough transaction load, the sequencer would most likely not have
 enough time to solve the inverse problem of manufacturing a block hash.
+
+### Future work: hardening this argument
+
+Our theoretical argument is a soft justification of our specific use of blockhashes as a source of entropy.
+
+A more quantitative form of this argument would:
+1. Establish benchmarks for the amount of work required for a sequencer to manufacture a specific blockhash
+with target entropy in mind.
+2. Establish the specs required of a sequencer to achieve this inversion within its 95th percentile block
+interval.
