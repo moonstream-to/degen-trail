@@ -10,6 +10,7 @@ import {ReentrancyGuard} from "../lib/openzeppelin-contracts/contracts/utils/Ree
 /// @notice This is the game contract for The Degen Trail: Jackpot Junction, a game in world of The Degen Trail.
 contract JackpotJunction is ERC1155, ReentrancyGuard {
     // Cumulative mass functions for probability distributions. Total mass for each distribution is 2^20 = 1048576.
+    /// Cumulative mass function for the unmodified distribution over outcomes.
     uint256[5] public UnmodifiedOutcomesCumulativeMass = [
         524288,
         524288 + 408934,
@@ -17,6 +18,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         524288 + 408934 + 104857 + 10487,
         524288 + 408934 + 104857 + 10487 + 10
     ];
+    /// Cumulative mass function for the improved distribution over outcomes.
     uint256[5] public ImprovedOutcomesCumulativeMass = [
         469283,
         469283 + 408934,
@@ -25,50 +27,69 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         469283 + 408934 + 154857 + 15487 + 15
     ];
 
-    // How many blocks a player has to act (reroll/accept).
+    /// How many blocks a player has to act (reroll/accept).
     uint256 public BlocksToAct;
 
-    // The block number of the last roll/re-roll by the player.
+    /// The block number of the last roll/re-roll by each player.
     mapping(address => uint256) public LastRollBlock;
 
-    // Costs (finest denomination of native token on the chain) to roll and reroll.
+    /// Cost (finest denomination of native token on the chain) to roll.
     uint256 public CostToRoll;
+    /// Cost (finest denomination of native token on the chain) to reroll.
     uint256 public CostToReroll;
 
-    // Item types: 0 (wagon cover), 1 (wagon body), 2 (wagon wheel), 3 (beast)
-    // Terrain types: 0 (plain), 1 (forest), 2 (swamp), 3 (water), 4 (mountain), 5 (desert), 6 (ice)
-    // Encoding of ERC1155 pool IDs: tier*28 + terrainType*4 + itemType
-    // itemType => terrainType => tier
+    /// Specifies the largest tier that has been unlocked for a given (itemType, terrainType) pair.
+    /// @notice Item types: 0 (wagon cover), 1 (wagon body), 2 (wagon wheel), 3 (beast)
+    /// @notice Terrain types: 0 (plain), 1 (forest), 2 (swamp), 3 (water), 4 (mountain), 5 (desert), 6 (ice)
+    /// @notice Encoding of ERC1155 pool IDs: tier*28 + terrainType*4 + itemType
+    /// @notice itemType => terrainType => tier
     mapping(uint256 => mapping(uint256 => uint256)) public CurrentTier;
 
     /// EquippedCover indicates the poolID of the cover that is currently equipped by the given player.
-    /// The mapping is address(player) => poolID + 1.
-    /// The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    /// @notice The mapping is address(player) => poolID + 1.
+    /// @notice The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
     mapping(address => uint256) public EquippedCover;
     /// EquippedBody indicates the poolID of the body that is currently equipped by the given player.
-    /// The mapping is address(player) => poolID + 1.
-    /// The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    /// @notice The mapping is address(player) => poolID + 1.
+    /// @notice The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
     mapping(address => uint256) public EquippedBody;
     /// EquippedWheels indicates the poolID of the wheels that are currently equipped by the given player.
-    /// The mapping is address(player) => poolID + 1.
-    /// The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    /// @notice The mapping is address(player) => poolID + 1.
+    /// @notice The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
     mapping(address => uint256) public EquippedWheels;
     /// EquippedBeasts indicates the poolID of the beasts that are currently equipped by the given player.
-    /// The mapping is address(player) => poolID + 1.
-    /// The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    /// @notice The mapping is address(player) => poolID + 1.
+    /// @notice The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
     mapping(address => uint256) public EquippedBeasts;
 
+    /// Fired when a new tier is unlocked for the givem itemType and terrainType. Specifies the tier and
+    /// its pool ID.
     event TierUnlocked(uint256 indexed itemType, uint256 indexed terrainType, uint256 indexed tier, uint256 poolID);
+    /// Fired when a player rolls (and rerolls).
     event Roll(address indexed player);
+    /// Fired when a player accepts the outcome of a roll.
     event Award(address indexed player, uint256 indexed outcome, uint256 value);
 
+    /// Signifies that the player is no longer able to act because too many blocks elapsed since their
+    /// last action.
     error DeadlineExceeded();
+    /// Signifies that a player cannot take an action that requires them to be out of a roll because it
+    /// is too soon since they rolled. This error is raised when a player tries to equip or unequip items
+    /// while they are in the middle of a roll.
     error RollInProgress();
+    /// This error is raised to signify that the player needs to wait for at least one more block to elapse.
     error WaitForTick();
+    /// Signifies that the player has not provided enough value to perform the action.
     error InsufficientValue();
+    /// Signifies that the player attempted to use an invalid item to perform a certain action.
     error InvalidItem(uint256 poolID);
+    /// Signifies that the player does not have enough items in their possession to perform an action.
     error InsufficientItems(uint256 poolID);
 
+    /// Creates a JackpotJunction game contract.
+    /// @param blocksToAct The number of blocks a player has to either reroll or accept the outcome of their current roll.
+    /// @param costToRoll The cost in the finest denomination of the native token on the chain to roll.
+    /// @param costToReroll The cost in the finest denomination of the native token on the chain to reroll.
     constructor(uint256 blocksToAct, uint256 costToRoll, uint256 costToReroll)
         ERC1155("https://github.com/moonstream-to/degen-trail")
     {
@@ -83,6 +104,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         }
     }
 
+    /// Allows the contract to receive the native token on its blockchain.
     receive() external payable {}
 
     function _enforceDeadline(address degenerate) internal view {
@@ -97,12 +119,14 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         }
     }
 
+    /// Returns the itemType, terrainType, and tier of a given pool ID.
     function genera(uint256 poolID) public pure returns (uint256 itemType, uint256 terrainType, uint256 tier) {
         tier = poolID / 28;
         terrainType = (poolID % 28) / 4;
         itemType = poolID % 4;
     }
 
+    /// Returns true if the given player currently has a bonus applied to them from their equipped items and false otherwise.
     function hasBonus(address degenerate) public view returns (bool bonus) {
         bonus = false;
 
@@ -112,6 +136,12 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         uint256 beastTrain = EquippedBeasts[degenerate];
 
         if (wagonCover != 0 && wagonBody != 0 && wheels != 0 && beastTrain != 0) {
+            // Decrement each equipped item by 1 to get its pool ID.
+            wagonCover--;
+            wagonBody--;
+            wheels--;
+            beastTrain--;
+
             uint256 terrainType;
 
             uint256 currentItemType;
@@ -147,6 +177,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         }
     }
 
+    /// Samples from unmodified distribution over outcomes.
     function sampleUnmodifiedOutcomeCumulativeMass(uint256 entropy) public view returns (uint256) {
         uint256 sample = entropy << 236 >> 236;
         if (sample < UnmodifiedOutcomesCumulativeMass[0]) {
@@ -161,6 +192,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         return 4;
     }
 
+    /// Samples from bonus distribution over outcomes.
     function sampleImprovedOutcomesCumulativeMass(uint256 entropy) public view returns (uint256) {
         uint256 sample = entropy << 236 >> 236;
         if (sample < ImprovedOutcomesCumulativeMass[0]) {
@@ -175,6 +207,9 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         return 4;
     }
 
+    /// Rolls or rerolls for the `msg.sender`, depending on whether or not whether `BlocksToAct` blocks
+    /// have elapsed since their last roll. If that number of blocks has elapsed, then the player is rolling
+    /// and must pay `CostToRoll`. Otherwise, the player is rerolling and must be `CostToReroll`.
     function roll() external payable {
         uint256 requiredFee = CostToRoll;
         if (block.number <= LastRollBlock[msg.sender] + BlocksToAct) {
