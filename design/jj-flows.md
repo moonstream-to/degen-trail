@@ -8,11 +8,11 @@ The flows are described from the point of view of the player:
 1. [Block countdown](#block-countdown)
 1. [Preview outcome](#preview-outcome)
 1. [Accept or abandon the outcome of a roll](#accept-or-abandon-the-outcome-of-a-roll)
-1. Check whether you are rolling from the bonus wheel
-1. View which items you have equipped
-1. Equip items
-1. Unequip items
-1. Craft items
+1. [Check whether you are rolling from the bonus wheel](#check-whether-you-are-rolling-from-the-bonus-wheel)
+1. [View which items you have equipped](#view-which-items-you-have-equipped)
+1. [Equip items](#equip-items)
+1. [Unequip items](#unequip-items)
+1. [Craft items](#craft-items)
 
 ## Roll and reroll
 
@@ -90,24 +90,9 @@ used to compute the outcome of the roll.
 
 The `outcome` function takes two arguments:
 1. `degenerate` - the player's address
-2. `bonus` - set this to `false` if you want to sample the player's outcome from the unmodified probability distribution and to `true` if you want to sample their outcome from the improved probability distribution
-
-To determine whether or not `bonus` applies to a player, you can call the [`hasBonus`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#hasbonus) method on the game contract:
-
-```
-	// Selector: b8f905c8
-	function hasBonus(address degenerate) external view returns (bool bonus);
-```
-
-So, to calculate a player's bonus based on the items they currently have equipped (which is how the game determines whether or not the bonus applies to them):
-
-```
-game.outcome(player, game.hasBonus(player));
-```
-
-When making this call off-chain, you can specify the block number at which to execute this method. That would allow you
-to show a history of past outcomes that the player may have been *eligible* to accept even if they didn't actually
-accept them.
+2. `bonus` - set this to `false` if you want to sample the player's outcome from the unmodified probability distribution and to `true` if you want to sample their outcome from the
+improved probability distribution. To check if a player's equipped items make it so that they are sampling from the improved distribution, see
+[Check whether you are rolling from the bonus wheel](#check-whether-you-are-rolling-from-the-bonus-wheel).
 
 The `outcome` function returns three `uint256` values:
 1. `entropy`
@@ -137,3 +122,50 @@ game.outcome(player, true);
 ```
 
 ## Accept or abandon the outcome of a roll
+
+After a player has rolled, they can accept the outcome of their roll as long as:
+1. At least 1 block has elapsed since they rolled
+1. No more than `BlocksToAct()` blocks have elapsed since they rolled
+
+They can *view* the outcome of the roll using the flow defined in [Preview outcome](#preview-outcome). If they are happy
+with what they see, they can submit an `accept` transaction:
+
+```
+	// Selector: 2852b71c
+	function accept() external  returns (uint256, uint256, uint256);
+```
+
+The return values of `accept` match the return values of [`outcome`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#outcome).
+
+If the player would prefer not to accept the outcome of their roll, they can either [`roll` again](#roll-and-reroll) or,
+simply through inaction, they can abandon the current sequence of actions (i.e. leave the game).
+
+If a player abandons their sequence of actions by not acting before their block deadline, they can always
+come back and [`roll`](#roll-and-reroll) again for the full `CostToRoll()`.
+
+## Check whether you are rolling from the bonus wheel
+
+To determine whether or not `bonus` applies to a player, you can call the [`hasBonus`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#hasbonus) method on the game contract:
+
+```
+	// Selector: b8f905c8
+	function hasBonus(address degenerate) external view returns (bool bonus);
+```
+
+So, to calculate a player's bonus based on the items they currently have equipped (which is how the game determines whether or not the bonus applies to them):
+
+```
+game.outcome(player, game.hasBonus(player));
+```
+
+When making this call off-chain, you can specify the block number at which to execute this method. That would allow you
+to show a history of past outcomes that the player may have been *eligible* to accept even if they didn't actually
+accept them.
+
+## View which items you have equipped
+
+## Equip items
+
+## Unequip items
+
+## Craft items
