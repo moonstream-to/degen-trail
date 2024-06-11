@@ -7,7 +7,7 @@ The flows are described from the point of view of the player:
 1. [Rolling and rerolling](#roll-and-reroll)
 1. [Block countdown](#block-countdown)
 1. [Preview outcome](#preview-outcome)
-1. Accept or abandon the outcome of a roll
+1. [Accept or abandon the outcome of a roll](#accept-or-abandon-the-outcome-of-a-roll)
 1. Check whether you are rolling from the bonus wheel
 1. View which items you have equipped
 1. Equip items
@@ -75,10 +75,65 @@ The way that Jackpot Junction is designed, a player is able to see the outcome o
 they choose to accept or reject it.
 
 To preview the outcome of their previous roll (assuming that their block deadline has not passed), they
-can call the following `view` method:
+can call the [`outcome`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#outcome) `view` method:
 
 ```
 	// Selector: 3a259e6a
 	function outcome(address degenerate, bool bonus) external view returns (uint256, uint256, uint256);
 ```
 
+A player can only view the outcome of their previous roll if:
+1. At least one block has elapsed since their previous roll (i.e. `block.number > game.LastRollBlock(player)`).
+This is because the game uses the hash of the block in which the roll was included as the randomness
+used to compute the outcome of the roll.
+1. The player has not exceeded the block deadline since their last roll (i.e. `block.number <= game.LastRollBlock(player) + game.BlocksToAct()`).
+
+The `outcome` function takes two arguments:
+1. `degenerate` - the player's address
+2. `bonus` - set this to `false` if you want to sample the player's outcome from the unmodified probability distribution and to `true` if you want to sample their outcome from the improved probability distribution
+
+To determine whether or not `bonus` applies to a player, you can call the [`hasBonus`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#hasbonus) method on the game contract:
+
+```
+	// Selector: b8f905c8
+	function hasBonus(address degenerate) external view returns (bool bonus);
+```
+
+So, to calculate a player's bonus based on the items they currently have equipped (which is how the game determines whether or not the bonus applies to them):
+
+```
+game.outcome(player, game.hasBonus(player));
+```
+
+When making this call off-chain, you can specify the block number at which to execute this method. That would allow you
+to show a history of past outcomes that the player may have been *eligible* to accept even if they didn't actually
+accept them.
+
+The `outcome` function returns three `uint256` values:
+1. `entropy`
+1. `outcomeIndex`
+1. `outcomeValue`
+
+The `entropy` is the randomness that the game used to determine the outcome. This is returned for informational
+purposes.
+
+The `outcomeIndex` is constrained so that `0 <= outcomeIndex <= 4`:
+0. Nothing - `outcomeValue` can be ignored
+1. Player receives an item - `outcomeValue` is the `tokenID` of the item that the player would receive if they accepted the outcome
+2. Player receives the consolation reward - `outcomeValue` is the amount of native token that would be transferred to the player if they accepted the outcome
+3. Player receives a moderate reward - `outcomeValue` is the amount of native token that would be transferred to the player if they accepted the outcome
+4. Player hit the jackpot - `outcomeValue` is the amount of native token that would be transferred to the player if they accepted the outcome
+
+### See what a player will receive if they accept their last roll
+
+```
+game.outcome(player, game.hasBonus(player));
+```
+
+### See what a player would have received if they had top tier items in every slot
+
+```
+game.outcome(player, true);
+```
+
+## Accept or abandon the outcome of a roll

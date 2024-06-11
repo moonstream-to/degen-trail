@@ -229,6 +229,13 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         return uint256(keccak256(abi.encode(blockhash(LastRollBlock[degenerate]), degenerate)));
     }
 
+    /// @notice If `outcome` is called at least one block after the player last rolled and before the players
+    /// block deadline expires, it shows the outcome of the player's last roll.
+    /// @param degenerate The address of the player
+    /// @param bonus This boolean signifies whether the outcome should be sampled from the unmodified or the improved outcome distribution
+    /// @return entropy The randomness that was used to determine the outcome of the player's last roll
+    /// @return _outcome The outcome of the player's last roll - this is 0, 1, 2, 3, or 4 and represents an index in either `UnmodifiedOutcomesCumulativeMass` or `ImprovedOutcomesCumulativeMass` (depending on whether a bonus was applied)
+    /// @return reward This represents a numerical parameter representing the reward that the player should receive. If the `_outcome` was `0`, this value is irrelevant and should be ignored. If the `_outcome` was `1`, signifying that the player will receive an item, this value is the ERC1155 `tokenID` of the item that will be transferred to the player if they accept the outcome, if the `_outcome` was `2`, `3`, or `4`, this value is the amount of native tokens that will be transferred to the player if they accept the outcome.
     function outcome(address degenerate, bool bonus) public view returns (uint256, uint256, uint256) {
         if (block.number <= LastRollBlock[degenerate]) {
             revert WaitForTick();
@@ -282,6 +289,11 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         LastRollBlock[msg.sender] = 0;
     }
 
+    /// If a player calls this method at least one block after they last rolled and before their block deadline expires,
+    /// it accepts the outcome of their last roll and transfers the corresponding reward to their account.
+    /// @return entropy The randomness that was used to determine the outcome of the player's last roll
+    /// @return _outcome The outcome of the player's last roll - this is 0, 1, 2, 3, or 4 and represents an index in either `UnmodifiedOutcomesCumulativeMass` or `ImprovedOutcomesCumulativeMass` (depending on whether a bonus was applied)
+    /// @return reward This represents a numerical parameter representing the reward that the player should receive. If the `_outcome` was `0`, this value is irrelevant and should be ignored. If the `_outcome` was `1`, signifying that the player will receive an item, this value is the ERC1155 `tokenID` of the item that will be transferred to the player if they accept the outcome, if the `_outcome` was `2`, `3`, or `4`, this value is the amount of native tokens that will be transferred to the player if they accept the outcome.
     function accept() external nonReentrant returns (uint256, uint256, uint256) {
         // The call to outcome() enforces the following constraints:
         // - At least one block has passed after the player rolled.
