@@ -1,5 +1,5 @@
 # JackpotJunction
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/12818faf377f56483b501c0785ece8f05d0f77bb/src/JackpotJunction.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/0a186495a2e1ccb4c7ea54a1fc8b7f31c3328a43/src/JackpotJunction.sol)
 
 **Inherits:**
 ERC1155, ReentrancyGuard
@@ -244,10 +244,28 @@ function _entropy(address degenerate) internal view virtual returns (uint256);
 
 ### outcome
 
+If `outcome` is called at least one block after the player last rolled and before the players
+block deadline expires, it shows the outcome of the player's last roll.
+
 
 ```solidity
 function outcome(address degenerate, bool bonus) public view returns (uint256, uint256, uint256);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`degenerate`|`address`|The address of the player|
+|`bonus`|`bool`|This boolean signifies whether the outcome should be sampled from the unmodified or the improved outcome distribution|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|entropy The randomness that was used to determine the outcome of the player's last roll|
+|`<none>`|`uint256`|_outcome The outcome of the player's last roll - this is 0, 1, 2, 3, or 4 and represents an index in either `UnmodifiedOutcomesCumulativeMass` or `ImprovedOutcomesCumulativeMass` (depending on whether a bonus was applied)|
+|`<none>`|`uint256`|reward This represents a numerical parameter representing the reward that the player should receive. If the `_outcome` was `0`, this value is irrelevant and should be ignored. If the `_outcome` was `1`, signifying that the player will receive an item, this value is the ERC1155 `tokenID` of the item that will be transferred to the player if they accept the outcome, if the `_outcome` was `2`, `3`, or `4`, this value is the amount of native tokens that will be transferred to the player if they accept the outcome.|
+
 
 ### _award
 
@@ -265,10 +283,21 @@ function _clearRoll() internal;
 
 ### accept
 
+If a player calls this method at least one block after they last rolled and before their block deadline expires,
+it accepts the outcome of their last roll and transfers the corresponding reward to their account.
+
 
 ```solidity
 function accept() external nonReentrant returns (uint256, uint256, uint256);
 ```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|entropy The randomness that was used to determine the outcome of the player's last roll|
+|`<none>`|`uint256`|_outcome The outcome of the player's last roll - this is 0, 1, 2, 3, or 4 and represents an index in either `UnmodifiedOutcomesCumulativeMass` or `ImprovedOutcomesCumulativeMass` (depending on whether a bonus was applied)|
+|`<none>`|`uint256`|reward This represents a numerical parameter representing the reward that the player should receive. If the `_outcome` was `0`, this value is irrelevant and should be ignored. If the `_outcome` was `1`, signifying that the player will receive an item, this value is the ERC1155 `tokenID` of the item that will be transferred to the player if they accept the outcome, if the `_outcome` was `2`, `3`, or `4`, this value is the amount of native tokens that will be transferred to the player if they accept the outcome.|
+
 
 ### equip
 
