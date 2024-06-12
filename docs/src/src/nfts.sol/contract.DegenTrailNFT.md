@@ -1,5 +1,5 @@
 # DegenTrailNFT
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/86e9cb2e87f3a2ab0e67804602112ff5b0b272b0/src/nfts.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/12818faf377f56483b501c0785ece8f05d0f77bb/src/nfts.sol)
 
 **Inherits:**
 ERC721, ERC721Enumerable, [PlayerBandit](/src/Bandit.sol/contract.PlayerBandit.md)
@@ -176,5 +176,40 @@ Mints an NFT for the caller, assuming they have rolled for NFT stats and their r
 
 ```solidity
 function mint() external returns (uint256 kind, uint256 speed, uint256 fight, uint256 repair, uint256 recovery);
+```
+
+### _metadataName
+
+
+```solidity
+function _metadataName(uint256 tokenID, DegenTrailStats memory stat) internal view virtual returns (string memory);
+```
+
+### _metadataKind
+
+
+```solidity
+function _metadataKind(uint256 kind) internal view virtual returns (string memory);
+```
+
+### metadataJSONBytes
+
+
+```solidity
+function metadataJSONBytes(uint256 tokenID) public view returns (bytes memory);
+```
+
+### metadataJSON
+
+
+```solidity
+function metadataJSON(uint256 tokenID) external view returns (string memory);
+```
+
+### tokenURI
+
+
+```solidity
+function tokenURI(uint256 tokenID) public view override returns (string memory);
 ```
 
