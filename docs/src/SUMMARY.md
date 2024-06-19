@@ -1,8 +1,6 @@
 # Summary
 - [Home](README.md)
 # src
-  - [PlayerBandit](src/Bandit.sol/contract.PlayerBandit.md)
-  - [NFTBandit](src/Bandit.sol/contract.NFTBandit.md)
   - [DegenTrail](src/Game.sol/contract.DegenTrail.md)
   - [JackpotJunction](src/JackpotJunction.sol/contract.JackpotJunction.md)
   - [DegenTrailStats](src/data.sol/struct.DegenTrailStats.md)

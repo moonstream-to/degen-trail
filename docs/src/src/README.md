@@ -1,8 +1,6 @@
 
 
 # Contents
-- [PlayerBandit](Bandit.sol/contract.PlayerBandit.md)
-- [NFTBandit](Bandit.sol/contract.NFTBandit.md)
 - [DegenTrail](Game.sol/contract.DegenTrail.md)
 - [JackpotJunction](JackpotJunction.sol/contract.JackpotJunction.md)
 - [DegenTrailStats](data.sol/struct.DegenTrailStats.md)
