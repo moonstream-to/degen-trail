@@ -45,6 +45,10 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     /// @notice itemType => terrainType => tier
     mapping(uint256 => mapping(uint256 => uint256)) public CurrentTier;
 
+    // NOTE: Only EquippedCover has a meaningful 0 value. Pool ID 0 is the tier 0 plain cover. This means that
+    // we need not add 1 to the pool ID for EquippedBody, EquippedWheels, and EquippedBeasts. This will save gas
+    // at the expense of making our code harder to understand. This is why I haven't implemented this optimization
+    // at the moment. Just recording the possibility of making it here.
     /// EquippedCover indicates the poolID of the cover that is currently equipped by the given player.
     /// @notice The mapping is address(player) => poolID + 1.
     /// @notice The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.

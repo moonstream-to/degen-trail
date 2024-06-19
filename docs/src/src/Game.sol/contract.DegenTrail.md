@@ -1,5 +1,5 @@
 # DegenTrail
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/40af20e32bc776b1e486a03cb53609e6918f69b1/src/Game.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/164c88082ca1999f8a1328d32a6932d56e6441cc/src/Game.sol)
 
 **Inherits:**
 ERC20
