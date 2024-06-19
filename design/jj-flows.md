@@ -162,10 +162,124 @@ When making this call off-chain, you can specify the block number at which to ex
 to show a history of past outcomes that the player may have been *eligible* to accept even if they didn't actually
 accept them.
 
+## Decode the item that a pool ID represents
+
+Each item in the game has:
+1. An item type: `0` for wagon `cover`, `1` for wagon `body`, `2` for wagon `wheels`, and `3` for wagon `beasts`.
+2. A terrain type: `0` for `plains`, `1` for `forest`, `2` for `swamp`, `3` for `water`, `4` for `mountain`, `5` for `desert`, `6` for `ice`
+3. A tier: An unsigned 256-bit integer representing the tier of that item, which is a measure of how useful the item is in-game.
+
+Each item in the game also has an ERC1155 token ID, which we call its *pool ID*.
+
+The pool ID of an item encodes its `item_type`, `terrain_type`, and `tier` according to the following formula:
+
+```solidity
+uint256 itemPoolID = 28*tier + 4*terrain_type + item_type
+```
+
+The `JackpotJunction` contract has a useful function called [`genera`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#genera)
+which decodes this information from a `poolID`:
+
+```solidity
+    /// Returns the itemType, terrainType, and tier of a given pool ID.
+    function genera(uint256 poolID) public pure returns (uint256 itemType, uint256 terrainType, uint256 tier) {
+        tier = poolID / 28;
+        terrainType = (poolID % 28) / 4;
+        itemType = poolID % 4;
+    }
+```
+
 ## View which items you have equipped
+
+This is the `JackpotJunction` code pertinent to equipped items:
+
+```solidity
+    /// EquippedCover indicates the poolID of the cover that is currently equipped by the given player.
+    /// @notice The mapping is address(player) => poolID + 1.
+    /// @notice The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    mapping(address => uint256) public EquippedCover;
+    /// EquippedBody indicates the poolID of the body that is currently equipped by the given player.
+    /// @notice The mapping is address(player) => poolID + 1.
+    /// @notice The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    mapping(address => uint256) public EquippedBody;
+    /// EquippedWheels indicates the poolID of the wheels that are currently equipped by the given player.
+    /// @notice The mapping is address(player) => poolID + 1.
+    /// @notice The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    mapping(address => uint256) public EquippedWheels;
+    /// EquippedBeasts indicates the poolID of the beasts that are currently equipped by the given player.
+    /// @notice The mapping is address(player) => poolID + 1.
+    /// @notice The value stored is poolID + 1 so that 0 indicates that no item is currently equipped in the slot.
+    mapping(address => uint256) public EquippedBeasts;
+```
+
+To read the current equipped cover on a player's wagon, assuming the player's address is `playerAddress`:
+
+```solidity
+uint256 coverPoolID = EquippedCover[playerAddress];
+require(coverPoolID > 0, "The given player has not equipped a cover");
+// The `EquippedCover` mapping uses the value 0 to indicate that no cover is equipped. Since a pool ID of
+// 0 does represent an item, if the value is non-zero, we need to subtract 1 to get the actual pool ID of
+// the equipped cover.
+coverPoolID--;
+```
+
+Note that, if `EquippedCover[playerAddress]` is `0`, then that means that the player does not have a cover
+equipped. If `EquippedCover[playerAddress]` is `1`, then it means that they have equipped a tier 0 `plains` cover.
+
+Even though pool ID `0` represents a cover, we have opted to follow the same convention with all other items.
+Even for `EquippedBody`, `EquippedWheels`, and `EquippedBeasts`, a value of `0` indicates that the player
+does not have anything equipped in the corresponding inventory slot. If the value of any of those mappings
+for the given `playerAddress` is non-zero, you must subtract 1 from it to get the actual pool ID of the item
+the player has equipped.
 
 ## Equip items
 
+A player can equip items that they own using the [`equip`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#equip)
+function:
+
+```solidity
+	// Selector: 03f2f420
+	function equip(uint256[] memory poolIDs) external ;
+```
+
+They can pass an array of pool IDs of items they would like to equip of any length. Any items that were
+previously equipped in any of the slots corresponding to the pool IDs is transferred back to the player.
+
+If you pass multiple items of the same item type in the `poolIDs` array, only the last of those items
+is equipped on the player. The other items of that type are first transferred to the game contract and
+then back to the player in the same transaction.
+
 ## Unequip items
 
+A player can unequip *all* their items by calling the [`unequip`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#unequip)
+method:
+
+```solidity
+	// Selector: b9c2edf7
+	function unequip() external ;
+```
+
+Currently, `JackpotJunction` does not support unequipping a single slot. If you think this functionality is needed,
+[create an issue](https://github.com/moonstream-to/degen-trail/issues/new).
+
 ## Craft items
+
+A player can combine `2*n` items from the same pool ID to produce `n` items of the same item type and
+terrain type, but 1 tier higher. They can do this using the [`craft`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#craft)
+function:
+
+```solidity
+	// Selector: 289137a1
+	function craft(uint256 poolID, uint256 numOutputs) external  returns (uint256 newPoolID);
+```
+
+Note that the `poolID` argument is the pool ID of the input items. The `newPoolID` return value is the pool ID
+of the items with the same item type and terrain type, but 1 tier higher. The relationship is:
+
+```
+newPoolID == poolID + 28
+```
+
+Note also that the second argument to `craft` is `numOutputs`. This is the number `n` of items with pool ID
+`newPoolID` that should be produced. It is not the number `2*n` of the input items that should be consumed
+in crafting the outputs.
