@@ -55,13 +55,13 @@ contract JackpotJunctionTest is Test {
     }
 
     function test_deployment() public {
-        assertEq(game.BlocksToAct(), blocksToAct);
-        assertEq(game.CostToRoll(), costToRoll);
-        assertEq(game.CostToReroll(), costToReroll);
+        vm.assertEq(game.BlocksToAct(), blocksToAct);
+        vm.assertEq(game.CostToRoll(), costToRoll);
+        vm.assertEq(game.CostToReroll(), costToReroll);
 
         for (uint256 i = 0; i < 4; i++) {
             for (uint256 j = 0; j < 7; j++) {
-                assertEq(game.CurrentTier(i, j), 0);
+                vm.assertEq(game.CurrentTier(i, j), 0);
             }
         }
     }
@@ -74,16 +74,16 @@ contract JackpotJunctionTest is Test {
         for (uint256 i = 0; i < 4; i++) {
             for (uint256 j = 0; j < 7; j++) {
                 (itemType, terrainType, tier) = game.genera(4 * j + i);
-                assertEq(itemType, i);
-                assertEq(terrainType, j);
-                assertEq(tier, 0);
+                vm.assertEq(itemType, i);
+                vm.assertEq(terrainType, j);
+                vm.assertEq(tier, 0);
             }
         }
 
         (itemType, terrainType, tier) = game.genera(95 * 28 + 4 * 3 + 2);
-        assertEq(itemType, 2);
-        assertEq(terrainType, 3);
-        assertEq(tier, 95);
+        vm.assertEq(itemType, 2);
+        vm.assertEq(terrainType, 3);
+        vm.assertEq(tier, 95);
     }
 
     function test_samples() public {
@@ -95,18 +95,18 @@ contract JackpotJunctionTest is Test {
         //     524288 + 408934 + 104857 + 10487,
         //     524288 + 408934 + 104857 + 10487 + 10
         // ];
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(0), 0);
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524287), 0);
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288), 1);
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408933), 1);
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934), 2);
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104856), 2);
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857), 3);
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10486), 3);
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10487), 4);
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10487 + 9), 4);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(0), 0);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524287), 0);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288), 1);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408933), 1);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934), 2);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104856), 2);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857), 3);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10486), 3);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10487), 4);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10487 + 9), 4);
         // Overflow
-        assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10487 + 10), 0);
+        vm.assertEq(game.sampleUnmodifiedOutcomeCumulativeMass(524288 + 408934 + 104857 + 10487 + 10), 0);
 
         // Improved
         // uint256[5] public ImprovedOutcomesCumulativeMass = [
@@ -116,18 +116,18 @@ contract JackpotJunctionTest is Test {
         //     469283 + 408934 + 154857 + 15487,
         //     469283 + 408934 + 154857 + 15487 + 15
         // ];
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(0), 0);
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469282), 0);
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283), 1);
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408933), 1);
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934), 2);
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154856), 2);
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857), 3);
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15486), 3);
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487), 4);
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487 + 14), 4);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(0), 0);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469282), 0);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469283), 1);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408933), 1);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934), 2);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154856), 2);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857), 3);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15486), 3);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487), 4);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487 + 14), 4);
         // Overflow
-        assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487 + 15), 0);
+        vm.assertEq(game.sampleImprovedOutcomesCumulativeMass(469283 + 408934 + 154857 + 15487 + 15), 0);
     }
 
     function test_fund_game() public {
@@ -151,14 +151,14 @@ contract JackpotJunctionTest is Test {
         vm.expectEmit();
         emit Roll(player1);
         game.roll{value: costToRoll}();
-        assertEq(player1.balance, 0);
-        assertEq(address(game).balance, costToRoll);
+        vm.assertEq(player1.balance, 0);
+        vm.assertEq(address(game).balance, costToRoll);
 
         vm.roll(block.number + 1);
         vm.deal(player1, costToReroll);
         game.roll{value: costToReroll}();
-        assertEq(player1.balance, 0);
-        assertEq(address(game).balance, costToRoll + costToReroll);
+        vm.assertEq(player1.balance, 0);
+        vm.assertEq(address(game).balance, costToRoll + costToReroll);
     }
 
     function test_reroll_cost_not_applied_after_block_deadline() public {
@@ -171,10 +171,10 @@ contract JackpotJunctionTest is Test {
         vm.roll(block.number + game.BlocksToAct() + 1);
 
         vm.expectRevert(JackpotJunction.InsufficientValue.selector);
-        assertLt(costToReroll, costToRoll);
+        vm.assertLt(costToReroll, costToRoll);
         game.roll{value: costToReroll}();
 
-        assertEq(player1.balance, 999 * costToRoll);
+        vm.assertEq(player1.balance, 999 * costToRoll);
     }
 
     function test_reroll_cost_applied_at_block_deadline() public {
@@ -188,7 +188,7 @@ contract JackpotJunctionTest is Test {
 
         game.roll{value: costToReroll}();
 
-        assertEq(player1.balance, 999 * costToRoll - costToReroll);
+        vm.assertEq(player1.balance, 999 * costToRoll - costToReroll);
     }
 
     function test_outcome_reverts_before_tick() public {
@@ -226,8 +226,8 @@ contract JackpotJunctionTest is Test {
         uint256 hash = uint256(blockhash(block.number - game.BlocksToAct()));
         uint256 expectedEntropy = uint256(keccak256(abi.encode(blockhash(block.number - game.BlocksToAct()), player1)));
         (uint256 entropy,,) = game.outcome(player1, false);
-        assertNotEq(entropy, hash);
-        assertEq(entropy, expectedEntropy);
+        vm.assertNotEq(entropy, hash);
+        vm.assertEq(entropy, expectedEntropy);
     }
 }
 
@@ -288,7 +288,7 @@ contract JackpotJunctionPlayTest is Test {
         vm.roll(block.number + 1);
         game.accept();
 
-        assertLt(costToReroll, costToRoll);
+        vm.assertLt(costToReroll, costToRoll);
         vm.roll(block.number + 1);
 
         vm.expectRevert(JackpotJunction.InsufficientValue.selector);
@@ -313,9 +313,9 @@ contract JackpotJunctionPlayTest is Test {
         vm.roll(block.number + 1);
         game.setEntropy(0);
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 0);
-        assertEq(actualValue, 0);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 0);
+        vm.assertEq(actualValue, 0);
 
         vm.expectEmit();
         emit Roll(player1);
@@ -326,20 +326,20 @@ contract JackpotJunctionPlayTest is Test {
         uint256 terrainType = 2;
         game.setEntropy((itemType << 138) + (terrainType << 20) + game.UnmodifiedOutcomesCumulativeMass(0));
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 1);
-        assertEq(actualValue, 4 * terrainType + itemType);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 1);
+        vm.assertEq(actualValue, 4 * terrainType + itemType);
 
-        assertEq(game.balanceOf(player1, 4 * terrainType + itemType), 0);
+        vm.assertEq(game.balanceOf(player1, 4 * terrainType + itemType), 0);
 
         vm.expectEmit();
         emit Award(player1, 1, 4 * terrainType + itemType);
         (actualEntropy, actualOutcome, actualValue) = game.accept();
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 1);
-        assertEq(actualValue, 4 * terrainType + itemType);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 1);
+        vm.assertEq(actualValue, 4 * terrainType + itemType);
 
-        assertEq(game.balanceOf(player1, 4 * terrainType + itemType), 1);
+        vm.assertEq(game.balanceOf(player1, 4 * terrainType + itemType), 1);
     }
 
     function test_nothing_then_small_reward() public {
@@ -358,32 +358,32 @@ contract JackpotJunctionPlayTest is Test {
         vm.roll(block.number + 1);
         game.setEntropy(0);
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 0);
-        assertEq(actualValue, 0);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 0);
+        vm.assertEq(actualValue, 0);
 
         game.roll{value: costToReroll}();
 
         vm.roll(block.number + 1);
         game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(1));
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 2);
-        assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 2);
+        vm.assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
 
-        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+        vm.assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
 
         (actualEntropy, actualOutcome, actualValue) = game.accept();
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 2);
-        assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 2);
+        vm.assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
 
-        assertEq(
+        vm.assertEq(
             address(game).balance,
             initialGameBalance + game.CostToRoll() + game.CostToReroll()
                 - (game.CostToRoll() + (game.CostToRoll() >> 1))
         );
-        assertEq(player1.balance, 1000 * game.CostToRoll() + (game.CostToRoll() >> 1) - game.CostToReroll());
+        vm.assertEq(player1.balance, 1000 * game.CostToRoll() + (game.CostToRoll() >> 1) - game.CostToReroll());
     }
 
     function test_nothing_then_medium_reward() public {
@@ -402,32 +402,32 @@ contract JackpotJunctionPlayTest is Test {
         vm.roll(block.number + 1);
         game.setEntropy(0);
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 0);
-        assertEq(actualValue, 0);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 0);
+        vm.assertEq(actualValue, 0);
 
         game.roll{value: costToReroll}();
 
         vm.roll(block.number + 1);
         game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(2));
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 3);
-        assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 3);
+        vm.assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
 
-        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+        vm.assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
 
         (actualEntropy, actualOutcome, actualValue) = game.accept();
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 3);
-        assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 3);
+        vm.assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
 
-        assertEq(
+        vm.assertEq(
             address(game).balance,
             initialGameBalance + game.CostToRoll() + game.CostToReroll()
                 - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6)
         );
-        assertEq(player1.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
+        vm.assertEq(player1.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
     }
 
     function test_nothing_then_large_reward() public {
@@ -446,32 +446,32 @@ contract JackpotJunctionPlayTest is Test {
         vm.roll(block.number + 1);
         game.setEntropy(0);
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 0);
-        assertEq(actualValue, 0);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 0);
+        vm.assertEq(actualValue, 0);
 
         game.roll{value: costToReroll}();
 
         vm.roll(block.number + 1);
         game.setEntropy(game.UnmodifiedOutcomesCumulativeMass(3));
         (actualEntropy, actualOutcome, actualValue) = game.outcome(player1, false);
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 4);
-        assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 4);
+        vm.assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
 
-        assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+        vm.assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
 
         (actualEntropy, actualOutcome, actualValue) = game.accept();
-        assertEq(actualEntropy, game.Entropy());
-        assertEq(actualOutcome, 4);
-        assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 4);
+        vm.assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
 
-        assertEq(
+        vm.assertEq(
             address(game).balance,
             initialGameBalance + game.CostToRoll() + game.CostToReroll()
                 - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1)
         );
-        assertEq(player1.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
+        vm.assertEq(player1.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
     }
 
     function test_crafting_tier_0_to_tier_1() public {
@@ -483,15 +483,15 @@ contract JackpotJunctionPlayTest is Test {
                 game.mint(player2, inputPoolID, 2);
                 uint256 initialInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 initialOutputBalance = game.balanceOf(player2, outputPoolID);
-                assertEq(game.CurrentTier(i, j), 0);
+                vm.assertEq(game.CurrentTier(i, j), 0);
                 vm.expectEmit();
                 emit TierUnlocked(i, j, 1, outputPoolID);
                 game.craft(inputPoolID, 1);
                 uint256 terminalInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 terminalOutputBalance = game.balanceOf(player2, outputPoolID);
-                assertEq(terminalInputBalance, initialInputBalance - 2);
-                assertEq(terminalOutputBalance, initialOutputBalance + 1);
-                assertEq(game.CurrentTier(i, j), 1);
+                vm.assertEq(terminalInputBalance, initialInputBalance - 2);
+                vm.assertEq(terminalOutputBalance, initialOutputBalance + 1);
+                vm.assertEq(game.CurrentTier(i, j), 1);
             }
         }
     }
@@ -506,15 +506,15 @@ contract JackpotJunctionPlayTest is Test {
                 game.mint(player2, inputPoolID, 2 * numOutputs);
                 uint256 initialInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 initialOutputBalance = game.balanceOf(player2, outputPoolID);
-                assertEq(game.CurrentTier(i, j), 0);
+                vm.assertEq(game.CurrentTier(i, j), 0);
                 vm.expectEmit();
                 emit TierUnlocked(i, j, 1, outputPoolID);
                 game.craft(inputPoolID, numOutputs);
                 uint256 terminalInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 terminalOutputBalance = game.balanceOf(player2, outputPoolID);
-                assertEq(terminalInputBalance, initialInputBalance - 2 * numOutputs);
-                assertEq(terminalOutputBalance, initialOutputBalance + numOutputs);
-                assertEq(game.CurrentTier(i, j), 1);
+                vm.assertEq(terminalInputBalance, initialInputBalance - 2 * numOutputs);
+                vm.assertEq(terminalOutputBalance, initialOutputBalance + numOutputs);
+                vm.assertEq(game.CurrentTier(i, j), 1);
             }
         }
     }
@@ -528,15 +528,15 @@ contract JackpotJunctionPlayTest is Test {
                 game.mint(player2, inputPoolID, 2);
                 uint256 initialInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 initialOutputBalance = game.balanceOf(player2, outputPoolID);
-                assertEq(game.CurrentTier(i, j), 92384);
+                vm.assertEq(game.CurrentTier(i, j), 92384);
                 vm.expectEmit();
                 emit TierUnlocked(i, j, 92385, outputPoolID);
                 game.craft(inputPoolID, 1);
                 uint256 terminalInputBalance = game.balanceOf(player2, inputPoolID);
                 uint256 terminalOutputBalance = game.balanceOf(player2, outputPoolID);
-                assertEq(terminalInputBalance, initialInputBalance - 2);
-                assertEq(terminalOutputBalance, initialOutputBalance + 1);
-                assertEq(game.CurrentTier(i, j), 92385);
+                vm.assertEq(terminalInputBalance, initialInputBalance - 2);
+                vm.assertEq(terminalOutputBalance, initialOutputBalance + 1);
+                vm.assertEq(game.CurrentTier(i, j), 92385);
             }
         }
     }
@@ -568,10 +568,10 @@ contract JackpotJunctionPlayTest is Test {
     }
 
     function test_hasBonus() public {
-        uint256 coverPlainsTierT0 = game.CurrentTier(0, 0);
-        uint256 bodyPlainsTierT0 = game.CurrentTier(1, 0);
-        uint256 wheelsPlainsTierT0 = game.CurrentTier(2, 0);
-        uint256 beastsPlainsTierT0 = game.CurrentTier(3, 0);
+        uint256 coverPlainsTier = game.CurrentTier(0, 0);
+        uint256 bodyPlainsTier = game.CurrentTier(1, 0);
+        uint256 wheelsPlainsTier = game.CurrentTier(2, 0);
+        uint256 beastsPlainsTier = game.CurrentTier(3, 0);
 
         vm.startPrank(player2);
 
@@ -583,22 +583,52 @@ contract JackpotJunctionPlayTest is Test {
 
         vm.assertFalse(game.hasBonus(player2));
 
-        game.mint(player2, coverPlainsTierT0*28, 1);
-        game.mint(player2, bodyPlainsTierT0*28 + 1, 1);
-        game.mint(player2, wheelsPlainsTierT0*28 + 2, 1);
-        game.mint(player2, beastsPlainsTierT0*28 + 3, 1);
+        game.mint(player2, coverPlainsTier*28, 1);
+        game.mint(player2, bodyPlainsTier*28 + 1, 1);
+        game.mint(player2, wheelsPlainsTier*28 + 2, 1);
+        game.mint(player2, beastsPlainsTier*28 + 3, 1);
 
-        vm.assertGt(game.balanceOf(player2, coverPlainsTierT0*28), 1);
-        vm.assertGt(game.balanceOf(player2, bodyPlainsTierT0*28 + 1), 1);
-        vm.assertGt(game.balanceOf(player2, wheelsPlainsTierT0*28 + 2), 1);
-        vm.assertGt(game.balanceOf(player2, beastsPlainsTierT0*28 + 3), 1);
+        vm.assertGt(game.balanceOf(player2, coverPlainsTier*28), 1);
+        vm.assertGt(game.balanceOf(player2, bodyPlainsTier*28 + 1), 1);
+        vm.assertGt(game.balanceOf(player2, wheelsPlainsTier*28 + 2), 1);
+        vm.assertGt(game.balanceOf(player2, beastsPlainsTier*28 + 3), 1);
 
-        uint256[] memory equipArgsT0 = new uint256[](4);
-        equipArgsT0[0] = coverPlainsTierT0*28;
-        equipArgsT0[1] = bodyPlainsTierT0*28 + 1;
-        equipArgsT0[2] = wheelsPlainsTierT0*28 + 2;
-        equipArgsT0[3] = beastsPlainsTierT0*28 + 3;
-        game.equip(equipArgsT0);
+        uint256[] memory equipArgs = new uint256[](4);
+        equipArgs[0] = coverPlainsTier*28;
+        equipArgs[1] = bodyPlainsTier*28 + 1;
+        equipArgs[2] = wheelsPlainsTier*28 + 2;
+        equipArgs[3] = beastsPlainsTier*28 + 3;
+        game.equip(equipArgs);
+
+        vm.assertEq(game.EquippedCover(player2), coverPlainsTier*28 + 1);
+        vm.assertEq(game.EquippedBody(player2), bodyPlainsTier*28 + 1 + 1);
+        vm.assertEq(game.EquippedWheels(player2), wheelsPlainsTier*28 + 2 + 1);
+        vm.assertEq(game.EquippedBeasts(player2), beastsPlainsTier*28 + 3 + 1);
+
+        vm.assertTrue(game.hasBonus(player2));
+
+        game.mint(player2, coverPlainsTier*28 + 28, 1);
+        game.mint(player2, bodyPlainsTier*28 + 1 + 28, 1);
+        game.mint(player2, wheelsPlainsTier*28 + 2 + 28, 1);
+        game.mint(player2, beastsPlainsTier*28 + 3 + 28, 1);
+
+        vm.assertEq(game.CurrentTier(0, 0), coverPlainsTier + 1);
+        vm.assertEq(game.CurrentTier(1, 0), bodyPlainsTier + 1);
+        vm.assertEq(game.CurrentTier(2, 0), wheelsPlainsTier + 1);
+        vm.assertEq(game.CurrentTier(3, 0), beastsPlainsTier + 1);
+
+        vm.assertFalse(game.hasBonus(player2));
+
+        equipArgs[0] = coverPlainsTier*28 + 28;
+        equipArgs[1] = bodyPlainsTier*28 + 1 + 28;
+        equipArgs[2] = wheelsPlainsTier*28 + 2 + 28;
+        equipArgs[3] = beastsPlainsTier*28 + 3 + 28;
+        game.equip(equipArgs);
+
+        vm.assertEq(game.EquippedCover(player2), coverPlainsTier*28 + 28 + 1);
+        vm.assertEq(game.EquippedBody(player2), bodyPlainsTier*28 + 1 + 28 + 1);
+        vm.assertEq(game.EquippedWheels(player2), wheelsPlainsTier*28 + 2 + 28 + 1);
+        vm.assertEq(game.EquippedBeasts(player2), beastsPlainsTier*28 + 3 + 28 + 1);
 
         vm.assertTrue(game.hasBonus(player2));
 
