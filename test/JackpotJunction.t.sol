@@ -4,8 +4,6 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/JackpotJunction.sol";
 
-// TODO: Test new rolling and acceptance mechanics using equipped items.
-
 contract TestableJackpotJunction is JackpotJunction {
     uint256 public Entropy;
 
@@ -50,7 +48,7 @@ contract JackpotJunctionTest is Test {
 
     uint256 blocksToAct = 10;
     uint256 costToRoll = 1e18;
-    uint256 costToReroll = 4e17;
+    uint256 costToReroll = 25e16;
 
     function setUp() public {
         game = new JackpotJunction(blocksToAct, costToRoll, costToReroll);
@@ -253,7 +251,7 @@ contract JackpotJunctionPlayTest is Test {
 
     uint256 blocksToAct = 10;
     uint256 costToRoll = 1e18;
-    uint256 costToReroll = 4e17;
+    uint256 costToReroll = 25e16;
 
     function setUp() public {
         game = new TestableJackpotJunction(blocksToAct, costToRoll, costToReroll);
@@ -567,5 +565,43 @@ contract JackpotJunctionPlayTest is Test {
                 game.craft(inputPoolID, numOutputs);
             }
         }
+    }
+
+    function test_hasBonus() public {
+        uint256 coverPlainsTierT0 = game.CurrentTier(0, 0);
+        uint256 bodyPlainsTierT0 = game.CurrentTier(1, 0);
+        uint256 wheelsPlainsTierT0 = game.CurrentTier(2, 0);
+        uint256 beastsPlainsTierT0 = game.CurrentTier(3, 0);
+
+        vm.startPrank(player2);
+
+        // Make it so that even if the test blockchain is at a low block number, the game doesn't think
+        // that it is waiting for the player to act.
+        vm.roll(block.number + game.BlocksToAct());
+        vm.assertGt(block.number, game.LastRollBlock(player2) + game.BlocksToAct());
+        game.unequip();
+
+        vm.assertFalse(game.hasBonus(player2));
+
+        game.mint(player2, coverPlainsTierT0*28, 1);
+        game.mint(player2, bodyPlainsTierT0*28 + 1, 1);
+        game.mint(player2, wheelsPlainsTierT0*28 + 2, 1);
+        game.mint(player2, beastsPlainsTierT0*28 + 3, 1);
+
+        vm.assertGt(game.balanceOf(player2, coverPlainsTierT0*28), 1);
+        vm.assertGt(game.balanceOf(player2, bodyPlainsTierT0*28 + 1), 1);
+        vm.assertGt(game.balanceOf(player2, wheelsPlainsTierT0*28 + 2), 1);
+        vm.assertGt(game.balanceOf(player2, beastsPlainsTierT0*28 + 3), 1);
+
+        uint256[] memory equipArgsT0 = new uint256[](4);
+        equipArgsT0[0] = coverPlainsTierT0*28;
+        equipArgsT0[1] = bodyPlainsTierT0*28 + 1;
+        equipArgsT0[2] = wheelsPlainsTierT0*28 + 2;
+        equipArgsT0[3] = beastsPlainsTierT0*28 + 3;
+        game.equip(equipArgsT0);
+
+        vm.assertTrue(game.hasBonus(player2));
+
+        vm.stopPrank();
     }
 }

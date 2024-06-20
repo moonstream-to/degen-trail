@@ -90,6 +90,14 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
     /// Signifies that the player does not have enough items in their possession to perform an action.
     error InsufficientItems(uint256 poolID);
 
+   function supportsInterface(bytes4 interfaceID) public pure override returns (bool) {
+      return
+            interfaceID == 0x01ffc9a7 ||    // ERC-165 support (i.e. `bytes4(keccak256('supportsInterface(bytes4)'))`).
+            interfaceID == 0xd9b67a26 ||     // ERC1155 interface ID
+            interfaceID == 0x4e2312e0 ||     // ERC-1155 `ERC1155TokenReceiver` support (i.e. `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")) ^ bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
+            interfaceID == 0xc46a2148;       // IJackpotJunction interface ID
+    }
+
     /// Creates a JackpotJunction game contract.
     /// @param blocksToAct The number of blocks a player has to either reroll or accept the outcome of their current roll.
     /// @param costToRoll The cost in the finest denomination of the native token on the chain to roll.
@@ -110,6 +118,26 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
 
     /// Allows the contract to receive the native token on its blockchain.
     receive() external payable {}
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes memory
+    ) public virtual returns (bytes4) {
+        return 0xf23a6e61;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] memory,
+        uint256[] memory,
+        bytes memory
+    ) public virtual returns (bytes4) {
+        return 0xbc197c81;
+    }
 
     function _enforceDeadline(address degenerate) internal view {
         if (block.number > LastRollBlock[degenerate] + BlocksToAct) {
