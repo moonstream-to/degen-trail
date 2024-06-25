@@ -912,7 +912,6 @@ contract JackpotJunctionPlayTest is Test {
         vm.assertEq(actualOutcome, 1);
         vm.assertEq(actualValue, 4 * terrainType + itemType);
 
-        // Check if the outcome would be different without the bonus
         (uint256 entropyWithoutBonus, uint256 outcomeWithoutBonus,) = game.outcome(player2, false);
         vm.assertEq(entropyWithoutBonus, game.Entropy());
         vm.assertLt(outcomeWithoutBonus, 1);
@@ -947,28 +946,23 @@ contract JackpotJunctionPlayTest is Test {
             equipArgs[i] = itemID;
         }
 
-        // Equip another cover item to verify that the last equipped item gets equipped
-        uint256 secondCoverItemID = 28; // Different cover item
+        uint256 secondCoverItemID = 28;
         initialBalances[4] = game.balanceOf(player2, secondCoverItemID);
         game.mint(player2, secondCoverItemID, 1);
         equipArgs[4] = secondCoverItemID;
 
         vm.roll(block.number + game.BlocksToAct() + 1);
 
-        // Expect TransferSingle events for equipping items
         for (uint256 i = 0; i < 4; i++) {
             vm.expectEmit(true, true, true, true);
             emit TransferSingle(player2, player2, address(game), equipArgs[i], 1);
         }
 
-        // Expect TransferSingle event for second cover item, replacing the first cover item
         vm.expectEmit(true, true, true, true);
         emit TransferSingle(player2, player2, address(game), secondCoverItemID, 1);
 
-        // Equip the items
         game.equip(equipArgs);
 
-        // Verify that the items are equipped correctly
         vm.assertEq(game.EquippedCover(player2), secondCoverItemID + 1); // The second cover item should be equipped
         vm.assertEq(game.EquippedBody(player2), equipArgs[1] + 1);
         vm.assertEq(game.EquippedWheels(player2), equipArgs[2] + 1);
@@ -983,4 +977,40 @@ contract JackpotJunctionPlayTest is Test {
         vm.stopPrank();
     }
 
+    function test_unequip_items() public {
+        vm.startPrank(player2);
+
+        uint256[] memory equipArgs = new uint256[](4);
+        uint256[] memory initialBalances = new uint256[](4);
+
+        for (uint256 i = 0; i < 4; i++) {
+            // itemType 0, 1, 2, 3 for plains (terrainType 0)
+            uint256 itemID = i;
+            initialBalances[i] = game.balanceOf(player2, itemID);
+            game.mint(player2, itemID, 1);
+            equipArgs[i] = itemID;
+        }
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+
+        game.equip(equipArgs);
+
+        for (uint256 i = 0; i < 4; i++) {
+            vm.expectEmit(true, true, true, true);
+            emit TransferSingle(player2, address(game), player2, equipArgs[i], 1);
+        }
+
+        game.unequip();
+
+        vm.assertEq(game.EquippedCover(player2), 0);
+        vm.assertEq(game.EquippedBody(player2), 0);
+        vm.assertEq(game.EquippedWheels(player2), 0);
+        vm.assertEq(game.EquippedBeasts(player2), 0);
+
+        for (uint256 i = 0; i < 4; i++) {
+            vm.assertEq(game.balanceOf(player2, equipArgs[i]), initialBalances[i] + 1);
+        }
+
+        vm.stopPrank();
+    }
 }
