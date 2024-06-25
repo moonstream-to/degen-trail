@@ -212,6 +212,8 @@ contract JackpotJunctionTest is Test {
         vm.roll(block.number + game.BlocksToAct() + 1);
         vm.expectRevert(JackpotJunction.DeadlineExceeded.selector);
         game.outcome(player1, false);
+
+        vm.stopPrank();
     }
 
     function test_outcome() public {
@@ -228,6 +230,43 @@ contract JackpotJunctionTest is Test {
         (uint256 entropy,,) = game.outcome(player1, false);
         vm.assertNotEq(entropy, hash);
         vm.assertEq(entropy, expectedEntropy);
+
+        vm.stopPrank();
+    }
+
+    function test_roll_insufficient_funds() public {
+        vm.startPrank(player1);
+
+        uint256 insufficientBalance = costToRoll - 1;
+
+        vm.deal(player1, insufficientBalance);
+
+        // Ensure that player previous roll has expired. Foundry tests run from block 0, which vacuously satisfies
+        // the reroll condition.
+        vm.roll(block.number + game.BlocksToAct() + 1);
+
+        vm.expectRevert(JackpotJunction.InsufficientValue.selector);
+        game.roll{value: insufficientBalance}();
+
+        vm.stopPrank();
+    }
+
+    function test_reroll_insufficient_funds() public {
+        vm.startPrank(player1);
+
+        uint256 insufficientBalanceForReroll = costToReroll - 1;
+
+        vm.deal(player1, costToRoll);
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+
+        vm.deal(player1, insufficientBalanceForReroll);
+
+        vm.expectRevert(JackpotJunction.InsufficientValue.selector);
+        game.roll{value: insufficientBalanceForReroll}();
+
+        vm.stopPrank();
     }
 }
 
@@ -631,6 +670,263 @@ contract JackpotJunctionPlayTest is Test {
         vm.assertEq(game.EquippedBeasts(player2), beastsPlainsTier*28 + 3 + 28 + 1);
 
         vm.assertTrue(game.hasBonus(player2));
+
+        vm.stopPrank();
+    }
+
+    function test_nothing_then_small_reward_with_bonus() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000 * costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        uint256[] memory equipArgs = new uint256[](4);
+        for (uint256 i = 0; i < 4; i++) {
+            // itemType 0, 1, 2, 3 for plains (terrainType 0)
+            uint256 itemID = i;
+            game.mint(player2, itemID, 1);
+            vm.assertEq(game.CurrentTier(i, 0), 0);
+            equipArgs[i] = itemID;
+        }
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+        game.equip(equipArgs);
+
+        vm.assertTrue(game.hasBonus(player2));
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 0);
+        vm.assertEq(actualValue, 0);
+
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(game.ImprovedOutcomesCumulativeMass(1));
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 2);
+        vm.assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
+
+        (uint256 entropyWithoutBonus, uint256 outcomeWithoutBonus,) = game.outcome(player2, false);
+        vm.assertEq(entropyWithoutBonus, game.Entropy());
+        vm.assertLt(outcomeWithoutBonus, 2);
+
+        vm.assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+
+        (actualEntropy, actualOutcome, actualValue) = game.accept();
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 2);
+        vm.assertEq(actualValue, game.CostToRoll() + (game.CostToRoll() >> 1));
+
+        vm.assertEq(
+            address(game).balance,
+            initialGameBalance + game.CostToRoll() + game.CostToReroll()
+                - (game.CostToRoll() + (game.CostToRoll() >> 1))
+        );
+        vm.assertEq(player2.balance, 1000 * game.CostToRoll() + (game.CostToRoll() >> 1) - game.CostToReroll());
+
+        vm.stopPrank();
+    }
+
+    function test_nothing_then_medium_reward_with_bonus() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000 * costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        uint256[] memory equipArgs = new uint256[](4);
+        for (uint256 i = 0; i < 4; i++) {
+            // itemType 0, 1, 2, 3 for plains (terrainType 0)
+            uint256 itemID = i;
+            game.mint(player2, itemID, 1);
+            vm.assertEq(game.CurrentTier(i, 0), 0);
+            equipArgs[i] = itemID;
+        }
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+        game.equip(equipArgs);
+
+        vm.assertTrue(game.hasBonus(player2));
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 0);
+        vm.assertEq(actualValue, 0);
+
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(game.ImprovedOutcomesCumulativeMass(2));
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 3);
+        vm.assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
+
+        (uint256 entropyWithoutBonus, uint256 outcomeWithoutBonus,) = game.outcome(player2, false);
+        vm.assertEq(entropyWithoutBonus, game.Entropy());
+        vm.assertLt(outcomeWithoutBonus, 3);
+
+        vm.assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+
+        (actualEntropy, actualOutcome, actualValue) = game.accept();
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 3);
+        vm.assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6);
+
+        vm.assertEq(
+            address(game).balance,
+            initialGameBalance + game.CostToRoll() + game.CostToReroll()
+                - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 6)
+        );
+        vm.assertEq(player2.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
+
+        vm.stopPrank();
+    }
+
+    function test_nothing_then_large_reward_with_bonus() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000 * costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        uint256[] memory equipArgs = new uint256[](4);
+        for (uint256 i = 0; i < 4; i++) {
+            // itemType 0, 1, 2, 3 for plains (terrainType 0)
+            uint256 itemID = i;
+            game.mint(player2, itemID, 1);
+            vm.assertEq(game.CurrentTier(i, 0), 0);
+            equipArgs[i] = itemID;
+        }
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+        game.equip(equipArgs);
+
+        vm.assertTrue(game.hasBonus(player2));
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 0);
+        vm.assertEq(actualValue, 0);
+
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(game.ImprovedOutcomesCumulativeMass(3));
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 4);
+        vm.assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
+
+        (uint256 entropyWithoutBonus, uint256 outcomeWithoutBonus,) = game.outcome(player2, false);
+        vm.assertEq(entropyWithoutBonus, game.Entropy());
+        vm.assertLt(outcomeWithoutBonus, 4);
+
+        vm.assertEq(address(game).balance, initialGameBalance + game.CostToRoll() + game.CostToReroll());
+
+        (actualEntropy, actualOutcome, actualValue) = game.accept();
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 4);
+        vm.assertEq(actualValue, (initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1);
+
+        vm.assertEq(
+            address(game).balance,
+            initialGameBalance + game.CostToRoll() + game.CostToReroll()
+                - ((initialGameBalance + game.CostToRoll() + game.CostToReroll()) >> 1)
+        );
+        vm.assertEq(player2.balance, 999 * game.CostToRoll() - game.CostToReroll() + actualValue);
+
+        vm.stopPrank();
+    }
+
+    function test_nothing_then_item_with_bonus() public {
+        uint256 actualEntropy;
+        uint256 actualOutcome;
+        uint256 actualValue;
+
+        uint256 initialGameBalance = 1000000 ether;
+
+        vm.startPrank(player2);
+        vm.deal(player2, 1000 * costToRoll);
+        vm.deal(address(game), initialGameBalance);
+
+        uint256[] memory equipArgs = new uint256[](4);
+        for (uint256 i = 0; i < 4; i++) {
+            // itemType 0, 1, 2, 3 for plains (terrainType 0)
+            uint256 itemID = i;
+            game.mint(player2, itemID, 1);
+            vm.assertEq(game.CurrentTier(i, 0), 0);
+            equipArgs[i] = itemID;
+        }
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+        game.equip(equipArgs);
+
+        vm.assertTrue(game.hasBonus(player2));
+
+        game.roll{value: costToRoll}();
+
+        vm.roll(block.number + 1);
+        game.setEntropy(0);
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 0);
+        vm.assertEq(actualValue, 0);
+
+        game.roll{value: costToReroll}();
+
+        vm.roll(block.number + 1);
+        uint256 itemType = 1;
+        uint256 terrainType = 2;
+        game.setEntropy((itemType << 138) + (terrainType << 20) + game.ImprovedOutcomesCumulativeMass(0));
+        (actualEntropy, actualOutcome, actualValue) = game.outcome(player2, true);
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 1);
+        vm.assertEq(actualValue, 4 * terrainType + itemType);
+
+        // Check if the outcome would be different without the bonus
+        (uint256 entropyWithoutBonus, uint256 outcomeWithoutBonus,) = game.outcome(player2, false);
+        vm.assertEq(entropyWithoutBonus, game.Entropy());
+        vm.assertLt(outcomeWithoutBonus, 1);
+
+        uint256 itemPoolID = 4 * terrainType + itemType;
+        uint256 initialItemBalance = game.balanceOf(player2, itemPoolID);
+
+        vm.expectEmit();
+        emit Award(player2, 1, 4 * terrainType + itemType);
+        (actualEntropy, actualOutcome, actualValue) = game.accept();
+        vm.assertEq(actualEntropy, game.Entropy());
+        vm.assertEq(actualOutcome, 1);
+        vm.assertEq(actualValue, 4 * terrainType + itemType);
+
+        vm.assertEq(game.balanceOf(player2, itemPoolID), initialItemBalance + 1);
 
         vm.stopPrank();
     }

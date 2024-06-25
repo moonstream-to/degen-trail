@@ -249,6 +249,12 @@ If you pass multiple items of the same item type in the `poolIDs` array, only th
 is equipped on the player. The other items of that type are first transferred to the game contract and
 then back to the player in the same transaction.
 
+Items can only be equipped on a player if they are not currently rolling, i.e. if the following condition holds:
+
+```
+block.number > game.LastRollBlock(player) + game.BlocksToAct();
+```
+
 ## Unequip items
 
 A player can unequip *all* their items by calling the [`unequip`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#unequip)
@@ -283,3 +289,9 @@ newPoolID == poolID + 28
 Note also that the second argument to `craft` is `numOutputs`. This is the number `n` of items with pool ID
 `newPoolID` that should be produced. It is not the number `2*n` of the input items that should be consumed
 in crafting the outputs.
+
+Items can only be unequipped from a player if they are not currently rolling, i.e. if the following condition holds:
+
+```
+block.number > game.LastRollBlock(player) + game.BlocksToAct();
+```
