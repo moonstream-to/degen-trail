@@ -1013,4 +1013,37 @@ contract JackpotJunctionPlayTest is Test {
 
         vm.stopPrank();
     }
+
+    function test_equip_unequip_reequip_wheels() public {
+        vm.startPrank(player2);
+
+        uint256 itemType = 2; // Wheels
+        uint256 terrainType = 0; // Plains
+        uint256 poolID = 4 * terrainType + itemType;
+
+        uint256 initialBalance = game.balanceOf(player2, poolID);
+        game.mint(player2, poolID, 1);
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+
+        uint256[] memory equipArgs = new uint256[](1);
+        equipArgs[0] = poolID;
+        game.equip(equipArgs);
+
+        vm.assertEq(game.EquippedWheels(player2), poolID + 1);
+
+        game.unequip();
+
+        vm.assertEq(game.EquippedWheels(player2), 0);
+
+        vm.assertEq(game.balanceOf(player2, poolID), initialBalance + 1);
+
+        game.equip(equipArgs);
+
+        vm.assertEq(game.EquippedWheels(player2), poolID + 1);
+
+        vm.assertEq(game.balanceOf(player2, poolID), initialBalance);
+
+        vm.stopPrank();
+    }
 }
