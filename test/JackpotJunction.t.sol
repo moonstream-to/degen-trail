@@ -274,6 +274,7 @@ contract JackpotJunctionPlayTest is Test {
     event Roll(address indexed player);
     event TierUnlocked(uint256 indexed itemType, uint256 indexed terrainType, uint256 indexed tier, uint256 poolID);
     event Award(address indexed player, uint256 indexed outcome, uint256 value);
+    event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value);
 
     TestableJackpotJunction game;
 
@@ -930,4 +931,56 @@ contract JackpotJunctionPlayTest is Test {
 
         vm.stopPrank();
     }
+
+    function test_equip_multiple_items_with_duplicated_slot() public {
+        vm.startPrank(player2);
+
+        uint256[] memory equipArgs = new uint256[](5);
+        uint256[] memory initialBalances = new uint256[](5);
+
+        for (uint256 i = 0; i < 4; i++) {
+            // itemType 0, 1, 2, 3 for plains (terrainType 0)
+            uint256 itemID = i;
+            initialBalances[i] = game.balanceOf(player2, itemID);
+            game.mint(player2, itemID, 1);
+            vm.assertEq(game.CurrentTier(i, 0), 0);
+            equipArgs[i] = itemID;
+        }
+
+        // Equip another cover item to verify that the last equipped item gets equipped
+        uint256 secondCoverItemID = 28; // Different cover item
+        initialBalances[4] = game.balanceOf(player2, secondCoverItemID);
+        game.mint(player2, secondCoverItemID, 1);
+        equipArgs[4] = secondCoverItemID;
+
+        vm.roll(block.number + game.BlocksToAct() + 1);
+
+        // Expect TransferSingle events for equipping items
+        for (uint256 i = 0; i < 4; i++) {
+            vm.expectEmit(true, true, true, true);
+            emit TransferSingle(player2, player2, address(game), equipArgs[i], 1);
+        }
+
+        // Expect TransferSingle event for second cover item, replacing the first cover item
+        vm.expectEmit(true, true, true, true);
+        emit TransferSingle(player2, player2, address(game), secondCoverItemID, 1);
+
+        // Equip the items
+        game.equip(equipArgs);
+
+        // Verify that the items are equipped correctly
+        vm.assertEq(game.EquippedCover(player2), secondCoverItemID + 1); // The second cover item should be equipped
+        vm.assertEq(game.EquippedBody(player2), equipArgs[1] + 1);
+        vm.assertEq(game.EquippedWheels(player2), equipArgs[2] + 1);
+        vm.assertEq(game.EquippedBeasts(player2), equipArgs[3] + 1);
+
+        vm.assertEq(game.balanceOf(player2, equipArgs[0]), initialBalances[0] + 1);
+        vm.assertEq(game.balanceOf(player2, equipArgs[1]), initialBalances[1]);
+        vm.assertEq(game.balanceOf(player2, equipArgs[2]), initialBalances[2]);
+        vm.assertEq(game.balanceOf(player2, equipArgs[3]), initialBalances[3]);
+        vm.assertEq(game.balanceOf(player2, equipArgs[4]), initialBalances[4]);
+
+        vm.stopPrank();
+    }
+
 }
