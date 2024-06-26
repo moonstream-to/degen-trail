@@ -3,6 +3,8 @@ pragma solidity ^0.8.13;
 
 import {ERC1155} from "../lib/openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import {ReentrancyGuard} from "../lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import {Base64} from "../lib/openzeppelin-contracts/contracts/utils/Base64.sol";
+import {Strings} from "../lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 
 /// @title Jackpot Junction game contract
 /// @author Moonstream Engineering (engineering@moonstream.to)
@@ -40,7 +42,7 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
 
     /// Specifies the largest tier that has been unlocked for a given (itemType, terrainType) pair.
     /// @notice Item types: 0 (wagon cover), 1 (wagon body), 2 (wagon wheel), 3 (beast)
-    /// @notice Terrain types: 0 (plain), 1 (forest), 2 (swamp), 3 (water), 4 (mountain), 5 (desert), 6 (ice)
+    /// @notice Terrain types: 0 (plains), 1 (forest), 2 (swamp), 3 (water), 4 (mountain), 5 (desert), 6 (ice)
     /// @notice Encoding of ERC1155 pool IDs: tier*28 + terrainType*4 + itemType
     /// @notice itemType => terrainType => tier
     mapping(uint256 => mapping(uint256 => uint256)) public CurrentTier;
@@ -433,5 +435,55 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
 
     function burnBatch(uint256[] memory poolIDs, uint256[] memory amounts) external {
         _burnBatch(msg.sender, poolIDs, amounts);
+    }
+
+    function poolMetadata(uint256 poolID) public pure returns (bytes memory json) {
+        (uint256 itemType, uint256 terrainType, uint256 tier) = genera(poolID);
+        string memory name = string(abi.encodePacked("Tier ", Strings.toString(tier)));
+        string memory terrainTypeName;
+        string memory itemTypeName;
+        if (terrainType == 0) {
+            terrainTypeName = "plains";
+        } else if (terrainType == 1) {
+            terrainTypeName = "forest";
+        } else if (terrainType == 2) {
+            terrainTypeName = "swamp";
+        } else if (terrainType == 3) {
+            terrainTypeName = "water";
+        } else if (terrainType == 4) {
+            terrainTypeName = "mountain";
+        } else if (terrainType == 5) {
+            terrainTypeName = "desert";
+        } else if (terrainType == 6) {
+            terrainTypeName = "ice";
+        }
+
+        if (itemType == 0) {
+            itemTypeName = "cover";
+        } else if (itemType == 1) {
+            itemTypeName = "body";
+        } else if (itemType == 2) {
+            itemTypeName = "wheels";
+        } else if (itemType == 3) {
+            itemTypeName = "beasts";
+        }
+
+        name = string(abi.encodePacked(name, unicode" ", terrainTypeName, unicode" ", itemTypeName));
+
+        json = abi.encodePacked(
+            '{"name": "',
+            name,
+            '", "decimals": 0, "attributes": [{"trait_type": "tier", "display_type": "number", "value": "',
+            Strings.toString(tier),
+            '"}, {"trait_type": "terrain_type", "display_type": "string", "value": "',
+            terrainTypeName,
+            '"}, {"trait_type": "item_type", "display_type": "string", "value": "',
+            itemTypeName,
+            '"}]}'
+        );
+    }
+
+    function uri(uint256 poolID) public pure override returns (string memory) {
+        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(poolMetadata(poolID))));
     }
 }
