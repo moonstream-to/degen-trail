@@ -1,5 +1,5 @@
 # IJackpotJunction
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/164c88082ca1999f8a1328d32a6932d56e6441cc/src/interfaces.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/54902d73c65c7678878504a329fd1306cb1d1d95/src/interfaces.sol)
 
 
 ## Functions
@@ -150,6 +150,22 @@ function hasBonus(address degenerate) external view returns (bool bonus);
 function isApprovedForAll(address account, address operator) external view returns (bool);
 ```
 
+### onERC1155BatchReceived
+
+
+```solidity
+function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory)
+    external
+    returns (bytes4);
+```
+
+### onERC1155Received
+
+
+```solidity
+function onERC1155Received(address, address, uint256, uint256, bytes memory) external returns (bytes4);
+```
+
 ### outcome
 
 
@@ -209,7 +225,7 @@ function setApprovalForAll(address operator, bool approved) external;
 
 
 ```solidity
-function supportsInterface(bytes4 interfaceId) external view returns (bool);
+function supportsInterface(bytes4 interfaceID) external pure returns (bool);
 ```
 
 ### unequip

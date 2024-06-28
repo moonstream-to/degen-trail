@@ -1,5 +1,5 @@
 # JackpotJunction
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/164c88082ca1999f8a1328d32a6932d56e6441cc/src/JackpotJunction.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/54902d73c65c7678878504a329fd1306cb1d1d95/src/JackpotJunction.sol)
 
 **Inherits:**
 ERC1155, ReentrancyGuard
@@ -82,7 +82,7 @@ Specifies the largest tier that has been unlocked for a given (itemType, terrain
 
 Item types: 0 (wagon cover), 1 (wagon body), 2 (wagon wheel), 3 (beast)
 
-Terrain types: 0 (plain), 1 (forest), 2 (swamp), 3 (water), 4 (mountain), 5 (desert), 6 (ice)
+Terrain types: 0 (plains), 1 (forest), 2 (swamp), 3 (water), 4 (mountain), 5 (desert), 6 (ice)
 
 Encoding of ERC1155 pool IDs: tier*28 + terrainType*4 + itemType
 
@@ -147,6 +147,13 @@ mapping(address => uint256) public EquippedBeasts;
 
 
 ## Functions
+### supportsInterface
+
+
+```solidity
+function supportsInterface(bytes4 interfaceID) public pure override returns (bool);
+```
+
 ### constructor
 
 Creates a JackpotJunction game contract.
@@ -172,6 +179,23 @@ Allows the contract to receive the native token on its blockchain.
 
 ```solidity
 receive() external payable;
+```
+
+### onERC1155Received
+
+
+```solidity
+function onERC1155Received(address, address, uint256, uint256, bytes memory) public virtual returns (bytes4);
+```
+
+### onERC1155BatchReceived
+
+
+```solidity
+function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory)
+    public
+    virtual
+    returns (bytes4);
 ```
 
 ### _enforceDeadline
@@ -241,6 +265,24 @@ function roll() external payable;
 ```solidity
 function _entropy(address degenerate) internal view virtual returns (uint256);
 ```
+
+### currentRewards
+
+Returns the current small, medium, and large rewards based on the game contract's native
+token balance.
+
+
+```solidity
+function currentRewards() public view returns (uint256 small, uint256 medium, uint256 large);
+```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`small`|`uint256`|The current small reward (in Wei)|
+|`medium`|`uint256`|The current medium reward (in Wei)|
+|`large`|`uint256`|The current large reward (in Wei)|
+
 
 ### outcome
 
@@ -332,6 +374,20 @@ function burn(uint256 poolID, uint256 amount) external;
 
 ```solidity
 function burnBatch(uint256[] memory poolIDs, uint256[] memory amounts) external;
+```
+
+### poolMetadata
+
+
+```solidity
+function poolMetadata(uint256 poolID) public pure returns (bytes memory json);
+```
+
+### uri
+
+
+```solidity
+function uri(uint256 poolID) public pure override returns (string memory);
 ```
 
 ## Events

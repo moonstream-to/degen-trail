@@ -1,5 +1,5 @@
 # IDegenTrail
-[Git Source](https://github.com/moonstream-to/degen-trail/blob/164c88082ca1999f8a1328d32a6932d56e6441cc/src/interfaces.sol)
+[Git Source](https://github.com/moonstream-to/degen-trail/blob/54902d73c65c7678878504a329fd1306cb1d1d95/src/interfaces.sol)
 
 
 ## Functions

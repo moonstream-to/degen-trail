@@ -263,6 +263,20 @@ contract JackpotJunction is ERC1155, ReentrancyGuard {
         return uint256(keccak256(abi.encode(blockhash(LastRollBlock[degenerate]), degenerate)));
     }
 
+    /// @notice Returns the current small, medium, and large rewards based on the game contract's native
+    /// token balance.
+    /// @return small The current small reward (in Wei)
+    /// @return medium The current medium reward (in Wei)
+    /// @return large The current large reward (in Wei)
+    function currentRewards() public view returns (uint256 small, uint256 medium, uint256 large) {
+        small = CostToRoll + (CostToRoll >> 1);
+        if (small > address(this).balance >> 6) {
+            small = address(this).balance >> 6;
+        }
+        medium = address(this).balance >> 6;
+        large = address(this).balance >> 1;
+    }
+
     /// @notice If `outcome` is called at least one block after the player last rolled and before the players
     /// block deadline expires, it shows the outcome of the player's last roll.
     /// @param degenerate The address of the player

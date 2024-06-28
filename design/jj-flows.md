@@ -295,3 +295,12 @@ Items can only be unequipped from a player if they are not currently rolling, i.
 ```
 block.number > game.LastRollBlock(player) + game.BlocksToAct();
 ```
+
+## View current native token rewards
+
+To view the current small, medium, and large native token rewards on the game contract, call the
+[`currentRewards`](../docs/src/src/JackpotJunction.sol/contract.JackpotJunction.md#currentrewards)
+method.
+
+This method returns a 3-tuple of `uint256` values representing the small, medium, and large rewards,
+all denominated in Wei.
